@@ -62,7 +62,7 @@ def register():
             fee_row = db.execute(
                 "SELECT value FROM app_settings WHERE key='reseller_registration_fee_pesewas'"
             ).fetchone()
-        return render_template("public/apply.html",
+        return render_template("auth/register.html",
                                fee_pesewas=int(fee_row["value"]) if fee_row else 5000)
 
     data = request.get_json()

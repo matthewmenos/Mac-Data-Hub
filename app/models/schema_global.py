@@ -44,7 +44,8 @@ CREATE TABLE IF NOT EXISTS data_bundles (
     label           TEXT NOT NULL,            -- e.g. "1GB - 30 Days"
     volume_mb       INTEGER NOT NULL,
     validity_days   INTEGER NOT NULL,
-    base_price_pesewas INTEGER NOT NULL,
+    base_price_pesewas  INTEGER NOT NULL,
+    guest_price_pesewas INTEGER NOT NULL DEFAULT 0,
     is_active       INTEGER NOT NULL DEFAULT 1,
     created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );

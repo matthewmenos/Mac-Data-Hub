@@ -26,16 +26,19 @@ form.addEventListener('submit', async e => {
   e.preventDefault();
   errEl.classList.add('hidden');
   const payload = {};
+  let tooLow = false;
   document.querySelectorAll('.price-input').forEach(input => {
-    const pesewas = Math.round(parseFloat(input.value) * 100);
-    const base = parseInt(input.dataset.base, 10);
-    if (pesewas < base) {
-      errEl.textContent = 'Your price cannot be lower than the base price.';
-      errEl.classList.remove('hidden');
-      throw new Error('Price too low');
-    }
-    payload[input.name] = pesewas;
+    const ghs    = parseFloat(input.value) || 0;
+    const pesewas = Math.round(ghs * 100);
+    const base   = parseInt(input.dataset.base, 10);
+    if (pesewas < base) { tooLow = true; return; }
+    payload[input.name] = ghs.toFixed(2);  // send GHS float string — route does * 100
   });
+  if (tooLow) {
+    errEl.textContent = 'Your price cannot be lower than the base price.';
+    errEl.classList.remove('hidden');
+    return;
+  }
 
   saveBtn.disabled = true;
   saveBtn.textContent = 'Saving…';

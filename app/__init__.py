@@ -10,6 +10,31 @@ def create_app():
 
     init_global_db(app.config)
 
+    # Allow admin to override API keys via app_settings DB (falls back to env vars)
+    try:
+        import sqlite3 as _sqlite3
+        from .services.db import _global_local_path
+        _db_path = _global_local_path(app.config)
+        if __import__("os").path.exists(_db_path):
+            _conn = _sqlite3.connect(_db_path)
+            _conn.row_factory = _sqlite3.Row
+            _rows = _conn.execute(
+                "SELECT key, value FROM app_settings WHERE key IN "
+                "('paystack_secret_key','paystack_public_key','gigzhub_api_key','gigzhub_base_url')"
+            ).fetchall()
+            _conn.close()
+            _overrides = {r["key"]: r["value"] for r in _rows}
+            if _overrides.get("paystack_secret_key"):
+                app.config["PAYSTACK_SECRET_KEY"] = _overrides["paystack_secret_key"]
+            if _overrides.get("paystack_public_key"):
+                app.config["PAYSTACK_PUBLIC_KEY"] = _overrides["paystack_public_key"]
+            if _overrides.get("gigzhub_api_key"):
+                app.config["GIGZHUB_API_KEY"] = _overrides["gigzhub_api_key"]
+            if _overrides.get("gigzhub_base_url"):
+                app.config["GIGZHUB_BASE_URL"] = _overrides["gigzhub_base_url"]
+    except Exception:
+        pass  # On first boot, app_settings may not have these keys yet
+
     @app.context_processor
     def inject_globals():
         ctx = {

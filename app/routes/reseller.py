@@ -31,17 +31,62 @@ def dashboard():
     config = current_app.config
     uid, user, store = _ctx(config)
 
-    recent_orders, total_earned = [], 0
+    recent_orders, total_earned, total_orders = [], 0, 0
     with user_db(config, uid) as udb:
         rows = udb.execute("SELECT * FROM orders ORDER BY created_at DESC LIMIT 10").fetchall()
         recent_orders = [dict(r) for r in rows]
         row = udb.execute("SELECT COALESCE(SUM(amount_pesewas),0) AS t FROM earnings").fetchone()
         total_earned = row["t"] if row else 0
+        cnt = udb.execute("SELECT COUNT(*) as c FROM orders").fetchone()
+        total_orders = cnt["c"] if cnt else 0
 
     return render_template("reseller/dashboard.html",
                            user=user, store=store,
                            recent_orders=recent_orders,
-                           total_earned=total_earned)
+                           total_earned=total_earned,
+                           total_orders=total_orders)
+
+
+@reseller_bp.route("/notifications")
+@reseller_required
+def notifications():
+    config = current_app.config
+    uid, user, _ = _ctx(config)
+    items = []
+    with user_db(config, uid) as udb:
+        recent_orders = udb.execute(
+            "SELECT id, bundle_label, network, profit_pesewas, status, created_at "
+            "FROM orders ORDER BY created_at DESC LIMIT 6"
+        ).fetchall()
+        recent_earnings = udb.execute(
+            "SELECT amount_pesewas, created_at FROM earnings ORDER BY created_at DESC LIMIT 4"
+        ).fetchall()
+        unread_count = udb.execute(
+            "SELECT COUNT(*) as c FROM orders "
+            "WHERE created_at >= datetime('now','-24 hours')"
+        ).fetchone()["c"]
+
+    for o in recent_orders:
+        icon = "green" if o["status"] == "dispatched" else "orange"
+        profit = "GHS %.2f" % (o["profit_pesewas"] / 100)
+        items.append({
+            "type": "order",
+            "icon": icon,
+            "msg": f"<strong>{o['bundle_label']}</strong> order — +{profit} profit",
+            "time": o["created_at"][:16].replace("T", " "),
+            "url": "/dashboard/orders",
+        })
+    for e in recent_earnings:
+        amt = "GHS %.2f" % (e["amount_pesewas"] / 100)
+        items.append({
+            "type": "earning",
+            "icon": "green",
+            "msg": f"Wallet credited <strong>+{amt}</strong>",
+            "time": e["created_at"][:16].replace("T", " "),
+            "url": "/dashboard/wallet",
+        })
+
+    return jsonify({"items": items, "unread": unread_count})
 
 
 @reseller_bp.route("/orders")

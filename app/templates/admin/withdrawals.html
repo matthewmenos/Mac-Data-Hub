@@ -121,10 +121,6 @@
 {% block scripts %}
 <script src="/static/js/admin_withdrawals.js"></script>
 <script>
-  document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
-    document.querySelector('.dash-sidebar').classList.toggle('open');
-  });
-
   const searchEl  = document.getElementById('wd-search');
   const netSel    = document.getElementById('wd-net-filter');
   const statusSel = document.getElementById('wd-status-filter');

@@ -117,10 +117,6 @@
 
 {% block scripts %}
 <script>
-  document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
-    document.querySelector('.dash-sidebar').classList.toggle('open');
-  });
-
   const searchEl    = document.getElementById('order-search');
   const netSel      = document.getElementById('order-net-filter');
   const statusSel   = document.getElementById('order-status-filter');

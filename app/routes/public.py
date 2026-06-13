@@ -53,7 +53,12 @@ def checkout():
                 ).fetchone()
         if not bundle:
             return redirect(url_for("public.home"))
-        price = price_row["price_pesewas"] if price_row else bundle["base_price_pesewas"]
+        if price_row:
+            price = price_row["price_pesewas"]
+        elif store:
+            price = bundle["base_price_pesewas"]
+        else:
+            price = bundle["guest_price_pesewas"] or bundle["base_price_pesewas"]
         return render_template("public/checkout.html", bundle=bundle, store=store, price=price)
 
     # POST: initiate Paystack payment
@@ -73,7 +78,12 @@ def checkout():
                 (store_id, bundle_id)
             ).fetchone()
 
-        price = price_row["price_pesewas"] if price_row else bundle["base_price_pesewas"]
+        if price_row:
+            price = price_row["price_pesewas"]
+        elif store:
+            price = bundle["base_price_pesewas"]
+        else:
+            price = bundle["guest_price_pesewas"] or bundle["base_price_pesewas"]
         profit = price - bundle["base_price_pesewas"] if store else 0
         order_id = str(uuid.uuid4())
         reference = f"MDH-{order_id[:8].upper()}"
@@ -103,7 +113,3 @@ def checkout_verify():
     ref = request.args.get("ref", "")
     return render_template("public/checkout_verify.html", reference=ref)
 
-
-@public_bp.route("/apply")
-def apply():
-    return redirect(url_for("auth.register"))

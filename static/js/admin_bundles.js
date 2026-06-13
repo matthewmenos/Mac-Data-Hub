@@ -37,8 +37,9 @@ document.querySelectorAll('.edit-btn').forEach(btn => {
     document.getElementById('b-label').value      = b.label;
     document.getElementById('b-volume').value     = (b.volume_mb / 1000).toFixed(2).replace(/\.?0+$/, '');
     document.getElementById('b-validity').value   = b.validity_days;
-    document.getElementById('b-price').value      = (b.base_price_pesewas / 100).toFixed(2);
-    document.getElementById('b-active').value     = b.is_active ? '1' : '0';
+    document.getElementById('b-price').value        = (b.base_price_pesewas / 100).toFixed(2);
+    document.getElementById('b-guest-price').value  = ((b.guest_price_pesewas || b.base_price_pesewas) / 100).toFixed(2);
+    document.getElementById('b-active').value       = b.is_active ? '1' : '0';
     openModal();
   });
 });
@@ -62,18 +63,20 @@ form.addEventListener('submit', async e => {
   saveBtn.disabled = true;
   saveBtn.textContent = 'Saving…';
 
-  const ghsValue = parseFloat(document.getElementById('b-price').value) || 0;
-  const gbValue  = parseFloat(document.getElementById('b-volume').value) || 0;
+  const ghsValue      = parseFloat(document.getElementById('b-price').value) || 0;
+  const guestGhs      = parseFloat(document.getElementById('b-guest-price').value) || 0;
+  const gbValue       = parseFloat(document.getElementById('b-volume').value) || 0;
 
   const payload = {
-    id:                 document.getElementById('bundle-id').value,
-    network:            document.getElementById('b-network').value,
-    offer_slug:         document.getElementById('b-offer-slug').value.trim(),
-    label:              document.getElementById('b-label').value.trim(),
-    volume_mb:          Math.round(gbValue * 1000),   // GB → MB
-    validity_days:      parseInt(document.getElementById('b-validity').value),
-    base_price_pesewas: Math.round(ghsValue * 100),   // GHS → pesewas
-    is_active:          parseInt(document.getElementById('b-active').value),
+    id:                   document.getElementById('bundle-id').value,
+    network:              document.getElementById('b-network').value,
+    offer_slug:           document.getElementById('b-offer-slug').value.trim(),
+    label:                document.getElementById('b-label').value.trim(),
+    volume_mb:            Math.round(gbValue * 1000),
+    validity_days:        parseInt(document.getElementById('b-validity').value),
+    base_price_pesewas:   Math.round(ghsValue * 100),
+    guest_price_pesewas:  Math.round(guestGhs * 100),
+    is_active:            parseInt(document.getElementById('b-active').value),
   };
 
   const resp = await fetch('/admin/bundles', {

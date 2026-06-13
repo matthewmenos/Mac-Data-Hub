@@ -79,6 +79,50 @@ def dashboard():
                            net_revenue=net_revenue)
 
 
+@admin_bp.route("/notifications")
+@admin_required
+def notifications():
+    config = current_app.config
+    items = []
+    with global_db(config) as db:
+        pending_orders = db.execute(
+            "SELECT COUNT(*) as c FROM orders WHERE status='pending'"
+        ).fetchone()["c"]
+        pending_withdrawals = db.execute(
+            "SELECT COUNT(*) as c FROM wallet_withdrawals WHERE status='pending'"
+        ).fetchone()["c"]
+        recent_orders = db.execute(
+            "SELECT id, customer_phone, network, created_at FROM orders "
+            "WHERE status='pending' ORDER BY created_at DESC LIMIT 5"
+        ).fetchall()
+        recent_withdrawals = db.execute(
+            "SELECT w.id, u.full_name, w.amount_pesewas, w.created_at "
+            "FROM wallet_withdrawals w JOIN users u ON u.id=w.user_id "
+            "WHERE w.status='pending' ORDER BY w.created_at DESC LIMIT 5"
+        ).fetchall()
+
+    for o in recent_orders:
+        items.append({
+            "type": "order",
+            "icon": "orange",
+            "msg": f"New <strong>{o['network'].upper()}</strong> order for {o['customer_phone']}",
+            "time": o["created_at"][:16].replace("T", " "),
+            "url": "/admin/orders",
+        })
+    for w in recent_withdrawals:
+        amt = "GHS %.2f" % (w["amount_pesewas"] / 100)
+        items.append({
+            "type": "withdrawal",
+            "icon": "blue",
+            "msg": f"<strong>{w['full_name']}</strong> requested {amt} withdrawal",
+            "time": w["created_at"][:16].replace("T", " "),
+            "url": "/admin/withdrawals",
+        })
+
+    total_unread = pending_orders + pending_withdrawals
+    return jsonify({"items": items, "unread": total_unread})
+
+
 @admin_bp.route("/bundles", methods=["GET", "POST", "PUT", "DELETE"])
 @admin_required
 def bundles():
@@ -101,21 +145,27 @@ def bundles():
             bundle_id = str(uuid.uuid4())
             db.execute(
                 """INSERT INTO data_bundles
-                   (id, network, offer_slug, label, volume_mb, validity_days, base_price_pesewas, is_active)
-                   VALUES (?,?,?,?,?,?,?,?)""",
+                   (id, network, offer_slug, label, volume_mb, validity_days,
+                    base_price_pesewas, guest_price_pesewas, is_active)
+                   VALUES (?,?,?,?,?,?,?,?,?)""",
                 (bundle_id, data["network"], data["offer_slug"], data["label"],
                  int(data["volume_mb"]), int(data["validity_days"]),
-                 int(data["base_price_pesewas"]), int(data.get("is_active", 1)))
+                 int(data["base_price_pesewas"]),
+                 int(data.get("guest_price_pesewas", data["base_price_pesewas"])),
+                 int(data.get("is_active", 1)))
             )
             return jsonify({"ok": True, "id": bundle_id})
 
         if request.method == "PUT":
             db.execute(
                 """UPDATE data_bundles SET network=?, offer_slug=?, label=?, volume_mb=?,
-                   validity_days=?, base_price_pesewas=?, is_active=? WHERE id=?""",
+                   validity_days=?, base_price_pesewas=?, guest_price_pesewas=?, is_active=?
+                   WHERE id=?""",
                 (data["network"], data["offer_slug"], data["label"],
                  int(data["volume_mb"]), int(data["validity_days"]),
-                 int(data["base_price_pesewas"]), int(data.get("is_active", 1)),
+                 int(data["base_price_pesewas"]),
+                 int(data.get("guest_price_pesewas", data["base_price_pesewas"])),
+                 int(data.get("is_active", 1)),
                  data["id"])
             )
             return jsonify({"ok": True})

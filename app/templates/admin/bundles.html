@@ -55,7 +55,8 @@
                 <th>Network</th>
                 <th>Volume</th>
                 <th>Validity</th>
-                <th>Base Price</th>
+                <th>Base (Reseller)</th>
+                <th>Guest Price</th>
                 <th>Offer Slug</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -69,6 +70,7 @@
                 <td>{% if b['volume_mb'] >= 1000 %}{{ '%.1f'|format(b['volume_mb'] / 1000) }}GB{% else %}{{ b['volume_mb'] }}MB{% endif %}</td>
                 <td>{{ b['validity_days'] }}d</td>
                 <td class="td-bold">GHS {{ '%.2f'|format(b['base_price_pesewas'] / 100) }}</td>
+                <td class="td-bold">GHS {{ '%.2f'|format((b['guest_price_pesewas'] or b['base_price_pesewas']) / 100) }}</td>
                 <td><code class="ref-code">{{ b['offer_slug'] }}</code></td>
                 <td>
                   <span class="status-pill {{ 'status-dispatched' if b['is_active'] else 'status-failed' }}">
@@ -143,19 +145,29 @@
 
       <div class="form-row">
         <div class="field">
-          <label for="b-price">Base price (GHS)</label>
+          <label for="b-price">Base price — reseller floor (GHS)</label>
           <div class="input-with-icon">
             <span class="input-icon input-icon-text">GHS</span>
             <input type="number" id="b-price" name="base_price_ghs" min="0.01" step="0.01" placeholder="0.00" required />
           </div>
+          <span class="field-hint">Resellers cannot sell below this price.</span>
         </div>
         <div class="field">
-          <label for="b-active">Status</label>
-          <select id="b-active" name="is_active">
-            <option value="1">Active</option>
-            <option value="0">Inactive</option>
-          </select>
+          <label for="b-guest-price">Guest price — direct buyer (GHS)</label>
+          <div class="input-with-icon">
+            <span class="input-icon input-icon-text">GHS</span>
+            <input type="number" id="b-guest-price" name="guest_price_ghs" min="0.01" step="0.01" placeholder="0.00" required />
+          </div>
+          <span class="field-hint">Price shown to customers on the main site.</span>
         </div>
+      </div>
+
+      <div class="field">
+        <label for="b-active">Status</label>
+        <select id="b-active" name="is_active">
+          <option value="1">Active</option>
+          <option value="0">Inactive</option>
+        </select>
       </div>
 
       <div id="bundle-error" class="form-error hidden"></div>
@@ -172,10 +184,6 @@
 {% block scripts %}
 <script src="/static/js/admin_bundles.js"></script>
 <script>
-  document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
-    document.querySelector('.dash-sidebar').classList.toggle('open');
-  });
-
   // Client-side search + filter
   const searchEl  = document.getElementById('bundle-search');
   const netSel    = document.getElementById('net-filter');

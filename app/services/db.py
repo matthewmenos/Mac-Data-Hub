@@ -47,10 +47,21 @@ def init_user_db(config, user_id: str) -> None:
         _apply_schema(local, USER_SCHEMA)
 
 
+_MIGRATIONS = [
+    # Add guest_price_pesewas to data_bundles (idempotent — ignored if column exists)
+    "ALTER TABLE data_bundles ADD COLUMN guest_price_pesewas INTEGER NOT NULL DEFAULT 0",
+]
+
+
 def _apply_schema(db_path: str, schema: str) -> None:
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
     with sqlite3.connect(db_path) as conn:
         conn.executescript(schema)
+        for migration in _MIGRATIONS:
+            try:
+                conn.execute(migration)
+            except sqlite3.OperationalError:
+                pass  # Column already exists
         conn.commit()
 
 

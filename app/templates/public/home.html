@@ -93,7 +93,7 @@
           <div class="bc-volume">
             {% if b['volume_mb'] >= 1000 %}{{ '%.0f'|format(b['volume_mb'] / 1000) }}GB{% else %}{{ b['volume_mb'] }}MB{% endif %}
           </div>
-          <div class="bc-price">GHS {{ '%.2f'|format(b['base_price_pesewas'] / 100) }}</div>
+          <div class="bc-price">GHS {{ '%.2f'|format((b['guest_price_pesewas'] or b['base_price_pesewas']) / 100) }}</div>
           <button class="btn btn-primary btn-block"
                   onclick="openOrderModal('{{ b['network'] }}', '{{ b['network']|upper }} Data', '{{ b['id'] }}')">
             Buy Now
@@ -207,7 +207,7 @@ window.BUNDLES = [
     label: "{{ b['label'] }}",
     volume_mb: {{ b['volume_mb'] }},
     validity_days: {{ b['validity_days'] }},
-    price_pesewas: {{ b['base_price_pesewas'] }}
+    price_pesewas: {{ b['guest_price_pesewas'] or b['base_price_pesewas'] }}
   }{{ ',' if not loop.last }}
   {% endfor %}
 ];

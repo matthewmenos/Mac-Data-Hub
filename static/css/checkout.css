@@ -31,7 +31,7 @@
   border-radius: 99px; font-size: .72rem; font-weight: 700; margin-bottom: .5rem;
 }
 .osc-mtn        { background: var(--mtn-bg); color: var(--mtn-color); }
-.osc-telecel    { background: var(--telecel-bg); color: var(--telecel-color); }
+.osc-telecel    { background: var(--tel-bg); color: var(--tel-color); }
 .osc-airteltigo { background: var(--at-bg); color: var(--at-color); }
 .osc-bundle-name { font-weight: 700; font-size: 1rem; }
 .osc-bundle-meta { font-size: .8rem; color: var(--text-muted); margin-top: .2rem; }
