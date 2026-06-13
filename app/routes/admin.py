@@ -129,9 +129,9 @@ def bundles():
     config = current_app.config
     with global_db(config) as db:
         if request.method == "GET":
-            all_bundles = db.execute(
+            all_bundles = [dict(r) for r in db.execute(
                 "SELECT * FROM data_bundles ORDER BY network, volume_mb"
-            ).fetchall()
+            ).fetchall()]
             counts = {
                 "total":    db.execute("SELECT COUNT(*) as c FROM data_bundles").fetchone()["c"],
                 "active":   db.execute("SELECT COUNT(*) as c FROM data_bundles WHERE is_active=1").fetchone()["c"],

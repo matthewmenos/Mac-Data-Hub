@@ -23,28 +23,29 @@ def _user_local_path(config, user_id: str) -> str:
 
 
 def init_global_db(config) -> None:
-    """Pull global.db from R2 (or create fresh) and apply schema."""
+    """Pull global.db from R2 (or create fresh) and apply schema + migrations."""
     local = _global_local_path(config)
+    is_new = False
     if not os.path.exists(local):
         found = download_db(config, _global_r2_key(), local)
-        if not found:
-            # First run — create and seed
-            _apply_schema(local, GLOBAL_SCHEMA)
-            upload_db(config, local, _global_r2_key())
-    else:
-        _apply_schema(local, GLOBAL_SCHEMA)
+        is_new = not found
+    # Always apply schema and migrations regardless of where the file came from
+    _apply_schema(local, GLOBAL_SCHEMA)
+    if is_new:
+        upload_db(config, local, _global_r2_key())
 
 
 def init_user_db(config, user_id: str) -> None:
-    """Pull or create a per-reseller DB and apply schema."""
+    """Pull or create a per-reseller DB and apply schema + migrations."""
     local = _user_local_path(config, user_id)
+    is_new = False
     if not os.path.exists(local):
         found = download_db(config, _user_r2_key(user_id), local)
-        if not found:
-            _apply_schema(local, USER_SCHEMA)
-            upload_db(config, local, _user_r2_key(user_id))
-    else:
-        _apply_schema(local, USER_SCHEMA)
+        is_new = not found
+    # Always apply schema and migrations regardless of where the file came from
+    _apply_schema(local, USER_SCHEMA)
+    if is_new:
+        upload_db(config, local, _user_r2_key(user_id))
 
 
 _MIGRATIONS = [
