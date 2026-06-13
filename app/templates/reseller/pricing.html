@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Set Prices — Mac Data Hub{% endblock %}
+
+{% block content %}
+<div class="dash-layout">
+  {% include "partials/reseller_nav.html" %}
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <h1 class="dash-page-title">Set your prices</h1>
+        <p class="dash-page-sub">Your price must be at or above the base price. Your profit is the difference.</p>
+      </div>
+      <button type="submit" form="pricing-form" class="btn btn-primary" id="save-btn">Save all prices</button>
+    </div>
+
+    <div class="pricing-explainer">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Prices are in <strong>Ghana Cedis (GHS)</strong>. Enter your selling price — the base price is what you pay, the difference is your profit.
+    </div>
+
+    <form id="pricing-form" novalidate>
+      {% set networks = [('mtn', 'MTN'), ('telecel', 'Telecel'), ('airteltigo', 'AirtelTigo')] %}
+      {% for net_key, net_label in networks %}
+        {% set net_bundles = bundles | selectattr('network', 'equalto', net_key) | list %}
+        {% if net_bundles %}
+        <div class="pricing-group">
+          <div class="pricing-group-head">
+            <span class="pghead-dot pgdot-{{ net_key }}"></span>
+            <span class="pghead-label">{{ net_label }}</span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table pricing-table">
+              <thead>
+                <tr>
+                  <th>Bundle</th>
+                  <th>Validity</th>
+                  <th>Base price</th>
+                  <th>Your price (GHS)</th>
+                  <th>Your profit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for b in net_bundles %}
+                {% set cur = existing.get(b['id'], b['base_price_pesewas']) %}
+                <tr>
+                  <td class="td-bold">{{ b['label'] }}</td>
+                  <td>{{ b['validity_days'] }}d</td>
+                  <td class="td-muted">GHS {{ '%.2f'|format(b['base_price_pesewas'] / 100) }}</td>
+                  <td>
+                    <input type="number" class="price-input" name="{{ b['id'] }}"
+                           min="{{ '%.2f'|format(b['base_price_pesewas'] / 100) }}"
+                           step="0.01"
+                           value="{{ '%.2f'|format(cur / 100) }}"
+                           data-base="{{ b['base_price_pesewas'] }}" />
+                  </td>
+                  <td class="profit-cell" id="profit-{{ b['id'] }}">
+                    GHS {{ '%.2f'|format((cur - b['base_price_pesewas']) / 100) }}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endif %}
+      {% endfor %}
+
+      <div id="pricing-error" class="form-error hidden"></div>
+      <div class="pricing-actions">
+        <button type="submit" class="btn btn-primary btn-lg">Save all prices</button>
+        <span id="save-status" class="save-status"></span>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/pricing.js"></script>
+{% endblock %}

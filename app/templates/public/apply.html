@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}Become a Reseller — Mac Data Hub{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<section class="apply-hero">
+  <div class="container apply-hero-inner">
+    <div class="apply-hero-text">
+      <div class="hero-badge">Reseller programme</div>
+      <h1>Sell data. Earn money. Work from anywhere.</h1>
+      <p>Create your own online store in minutes. Set your own prices above the base rate and earn the difference on every sale — automatically paid to your wallet.</p>
+      <div class="apply-hero-fee">
+        One-time registration fee: <strong>GHS {{ '%.2f'|format(fee_pesewas / 100) }}</strong>
+      </div>
+    </div>
+    <div class="apply-hero-perks">
+      <div class="perk-item">
+        <div class="perk-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <div>
+          <div class="perk-title">Your own store link</div>
+          <div class="perk-desc">macdatahub.com/s/<em>yourname</em></div>
+        </div>
+      </div>
+      <div class="perk-item">
+        <div class="perk-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div>
+          <div class="perk-title">Set your own prices</div>
+          <div class="perk-desc">Any markup above admin base prices</div>
+        </div>
+      </div>
+      <div class="perk-item">
+        <div class="perk-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        </div>
+        <div>
+          <div class="perk-title">Instant wallet payouts</div>
+          <div class="perk-desc">Withdraw to mobile money anytime</div>
+        </div>
+      </div>
+      <div class="perk-item">
+        <div class="perk-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div>
+          <div class="perk-title">Real-time dashboard</div>
+          <div class="perk-desc">Track orders, earnings and wallet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="apply-steps-section">
+  <div class="container">
+    <div class="section-header">
+      <h2>How it works</h2>
+    </div>
+    <div class="apply-steps">
+      <div class="apply-step">
+        <div class="apply-step-num">1</div>
+        <div class="apply-step-body">
+          <h3>Register your account</h3>
+          <p>Fill in your details, choose a store URL, and pay the one-time fee.</p>
+        </div>
+      </div>
+      <div class="apply-step-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="apply-step">
+        <div class="apply-step-num">2</div>
+        <div class="apply-step-body">
+          <h3>Set your prices</h3>
+          <p>Log in and set markup prices for each bundle. Your profit is the difference.</p>
+        </div>
+      </div>
+      <div class="apply-step-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="apply-step">
+        <div class="apply-step-num">3</div>
+        <div class="apply-step-body">
+          <h3>Share and earn</h3>
+          <p>Share your store link. Every sale automatically credits your wallet.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Registration form -->
+<section class="register-section" id="register">
+  <div class="container register-container">
+    <div class="register-card">
+      <div class="register-card-header">
+        <h2>Create your reseller account</h2>
+        <p>Takes about 3 minutes. Payment activates your account instantly.</p>
+      </div>
+
+      <form id="register-form" novalidate>
+        <div class="field-row">
+          <div class="field">
+            <label for="full_name">Full name</label>
+            <input type="text" id="full_name" name="full_name" placeholder="Kwame Mensah" required autocomplete="name" />
+          </div>
+          <div class="field">
+            <label for="phone">Phone number</label>
+            <input type="tel" id="phone" name="phone" placeholder="0241 234 567" required autocomplete="tel" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="email">Email address</label>
+          <input type="email" id="email" name="email" placeholder="kwame@example.com" required autocomplete="email" />
+        </div>
+
+        <div class="field">
+          <label for="slug">Your store URL</label>
+          <div class="input-prefix-wrap">
+            <span class="input-prefix">macdatahub.com/s/</span>
+            <input type="text" id="slug" name="slug" placeholder="kwame-data"
+                   required pattern="[a-z0-9\-]+" autocomplete="off" />
+          </div>
+          <span class="field-hint">Lowercase letters, numbers, and hyphens only. This cannot be changed.</span>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password"
+                   required minlength="8" autocomplete="new-password" />
+          </div>
+          <div class="field">
+            <label for="confirm_password">Confirm password</label>
+            <input type="password" id="confirm_password" name="confirm_password"
+                   required autocomplete="new-password" />
+          </div>
+        </div>
+
+        <div class="register-fee-note">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          A one-time registration fee of <strong>GHS {{ '%.2f'|format(fee_pesewas / 100) }}</strong> will be charged to activate your account.
+        </div>
+
+        <div id="form-error" class="form-error hidden"></div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="register-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Register &amp; Pay GHS {{ '%.2f'|format(fee_pesewas / 100) }}
+        </button>
+
+        <div class="secure-note">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Secured by Paystack &mdash; mobile money &amp; card accepted
+        </div>
+      </form>
+
+      <div class="register-signin">
+        Already have an account? <a href="/login">Sign in here</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/register.js"></script>
+{% endblock %}

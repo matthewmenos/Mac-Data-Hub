@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Mac Data Hub{% endblock %}
+
+{% block content %}
+<div class="dash-layout">
+  {% include "partials/reseller_nav.html" %}
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <h1 class="dash-page-title">Hello, {{ user['full_name'].split()[0] }}</h1>
+        <p class="dash-page-sub">Here's what's happening with your store today.</p>
+      </div>
+      {% if store %}
+      <a href="/s/{{ store['slug'] }}" target="_blank" class="btn btn-ghost btn-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        View my store
+      </a>
+      {% endif %}
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-grid">
+      <div class="stat-card stat-card-primary">
+        <div class="sc-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        </div>
+        <div class="sc-body">
+          <div class="sc-label">Wallet balance</div>
+          <div class="sc-value">GHS {{ '%.2f'|format(user['wallet_pesewas'] / 100) }}</div>
+        </div>
+        <a href="/dashboard/wallet" class="sc-action">Withdraw</a>
+      </div>
+
+      <div class="stat-card">
+        <div class="sc-icon sc-icon-green">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        </div>
+        <div class="sc-body">
+          <div class="sc-label">Total earned</div>
+          <div class="sc-value">GHS {{ '%.2f'|format(total_earned / 100) }}</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="sc-icon sc-icon-blue">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div class="sc-body">
+          <div class="sc-label">Total orders</div>
+          <div class="sc-value">{{ recent_orders|length }}</div>
+        </div>
+        <a href="/dashboard/orders" class="sc-action">View all</a>
+      </div>
+
+      <div class="stat-card">
+        <div class="sc-icon sc-icon-purple">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <div class="sc-body">
+          <div class="sc-label">My store</div>
+          <div class="sc-value sc-value-sm">{{ store['store_name'] if store else '—' }}</div>
+        </div>
+        <a href="/dashboard/store" class="sc-action">Edit</a>
+      </div>
+    </div>
+
+    <!-- Store link share -->
+    {% if store %}
+    <div class="store-link-card">
+      <div class="slc-label">Your store link — share this with customers</div>
+      <div class="slc-url-row">
+        <input type="text" class="slc-url" readonly id="store-url-input"
+               value="{{ config['APP_URL'] }}/s/{{ store['slug'] }}" />
+        <button class="btn btn-primary btn-sm" onclick="copyLink()">Copy link</button>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent orders -->
+    <div class="dash-section-header">
+      <h2>Recent orders</h2>
+      <a href="/dashboard/orders" class="section-link">View all</a>
+    </div>
+
+    {% if recent_orders %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Bundle</th>
+            <th>Network</th>
+            <th>Customer</th>
+            <th>Profit</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in recent_orders %}
+          <tr>
+            <td>{{ o['bundle_label'] }}</td>
+            <td><span class="net-badge net-{{ o['network'] }}">{{ o['network']|upper }}</span></td>
+            <td class="td-phone">{{ o['customer_phone'] }}</td>
+            <td class="td-profit">GHS {{ '%.2f'|format(o['profit_pesewas'] / 100) }}</td>
+            <td><span class="status-pill status-{{ o['status'] }}">{{ o['status'] }}</span></td>
+            <td class="td-date">{{ o['created_at'][:10] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-dash">
+      <div class="empty-dash-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <h3>No orders yet</h3>
+      <p>Share your store link to start earning. Every sale goes straight to your wallet.</p>
+      <a href="/dashboard/pricing" class="btn btn-primary">Set your prices first</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyLink() {
+  const inp = document.getElementById('store-url-input');
+  inp.select();
+  navigator.clipboard.writeText(inp.value).catch(() => document.execCommand('copy'));
+  const btn = inp.nextElementSibling;
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy link', 2000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,41 @@
+<nav class="dash-sidebar">
+  <div class="dsb-user">
+    <div class="dsb-avatar dsb-avatar-admin">A</div>
+    <div class="dsb-user-info">
+      <div class="dsb-user-name">Administrator</div>
+      <div class="dsb-user-role">Admin</div>
+    </div>
+  </div>
+  <ul class="dsb-links">
+    <li><a href="/admin" class="dsb-link {% if request.path == '/admin' %}dsb-active{% endif %}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Overview
+    </a></li>
+    <li><a href="/admin/bundles" class="dsb-link {% if '/bundles' in request.path %}dsb-active{% endif %}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Bundles
+    </a></li>
+    <li><a href="/admin/resellers" class="dsb-link {% if '/resellers' in request.path %}dsb-active{% endif %}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Resellers
+    </a></li>
+    <li><a href="/admin/orders" class="dsb-link {% if '/orders' in request.path %}dsb-active{% endif %}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Orders
+    </a></li>
+    <li><a href="/admin/withdrawals" class="dsb-link {% if '/withdrawals' in request.path %}dsb-active{% endif %}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+      Withdrawals
+    </a></li>
+    <li><a href="/admin/settings" class="dsb-link {% if '/settings' in request.path %}dsb-active{% endif %}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M20 12h-2M4 12H2M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41M12 20v-2M12 4V2"/></svg>
+      Settings
+    </a></li>
+  </ul>
+  <div class="dsb-footer">
+    <a href="/logout" class="dsb-link dsb-logout">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign out
+    </a>
+  </div>
+</nav>

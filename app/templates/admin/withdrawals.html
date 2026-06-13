@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Withdrawals — Admin{% endblock %}
+
+{% block content %}
+<div class="dash-layout">
+  {% include "partials/admin_nav.html" %}
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <h1 class="dash-page-title">Withdrawal requests</h1>
+        <p class="dash-page-sub">Process reseller payout requests.</p>
+      </div>
+    </div>
+
+    {% if withdrawals %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Reseller</th>
+            <th>Amount</th>
+            <th>Mobile number</th>
+            <th>Network</th>
+            <th>Status</th>
+            <th>Requested</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for w in withdrawals %}
+          <tr data-id="{{ w['id'] }}">
+            <td>
+              <div class="td-bold">{{ w['full_name'] }}</div>
+              <div class="td-muted td-sm">{{ w['email'] }}</div>
+            </td>
+            <td class="td-bold">GHS {{ '%.2f'|format(w['amount_pesewas'] / 100) }}</td>
+            <td>{{ w['mobile_number'] }}</td>
+            <td><span class="net-badge net-{{ w['network'] }}">{{ w['network']|upper }}</span></td>
+            <td><span class="status-pill status-{{ w['status'] }}">{{ w['status'] }}</span></td>
+            <td class="td-date">{{ w['created_at'][:10] }}</td>
+            <td class="td-actions">
+              {% if w['status'] == 'pending' %}
+              <button class="btn btn-primary btn-sm mark-paid-btn" data-id="{{ w['id'] }}">
+                Mark paid
+              </button>
+              <button class="btn btn-danger btn-sm mark-failed-btn" data-id="{{ w['id'] }}">
+                Reject
+              </button>
+              {% else %}
+              <span class="td-muted td-sm">{{ w['status']|capitalize }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-dash">
+      <h3>No withdrawal requests</h3>
+      <p>Requests from resellers will appear here when submitted.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/admin_withdrawals.js"></script>
+{% endblock %}

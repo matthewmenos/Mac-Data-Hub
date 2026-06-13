@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Admin — Mac Data Hub{% endblock %}
+
+{% block content %}
+<div class="dash-layout">
+  {% include "partials/admin_nav.html" %}
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <h1 class="dash-page-title">Platform overview</h1>
+        <p class="dash-page-sub">Everything happening on Mac Data Hub right now.</p>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-grid">
+      <div class="stat-card stat-card-primary">
+        <div class="sc-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div class="sc-body">
+          <div class="sc-label">Total orders</div>
+          <div class="sc-value">{{ total_orders }}</div>
+        </div>
+        <a href="/admin/orders" class="sc-action">View all</a>
+      </div>
+
+      <div class="stat-card">
+        <div class="sc-icon sc-icon-green">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div class="sc-body">
+          <div class="sc-label">Total revenue</div>
+          <div class="sc-value">GHS {{ '%.2f'|format(total_revenue / 100) }}</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="sc-icon sc-icon-blue">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        </div>
+        <div class="sc-body">
+          <div class="sc-label">Active resellers</div>
+          <div class="sc-value">{{ total_resellers }}</div>
+        </div>
+        <a href="/admin/resellers" class="sc-action">View all</a>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="admin-quick-actions">
+      <a href="/admin/bundles" class="aqa-item">
+        <div class="aqa-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div class="aqa-label">Manage Bundles</div>
+        <div class="aqa-sub">Add, edit, or disable data bundles</div>
+      </a>
+      <a href="/admin/resellers" class="aqa-item">
+        <div class="aqa-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="aqa-label">Resellers</div>
+        <div class="aqa-sub">View and manage reseller accounts</div>
+      </a>
+      <a href="/admin/withdrawals" class="aqa-item">
+        <div class="aqa-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+        </div>
+        <div class="aqa-label">Withdrawals</div>
+        <div class="aqa-sub">Process pending payout requests</div>
+      </a>
+      <a href="/admin/settings" class="aqa-item">
+        <div class="aqa-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M20 12h-2M4 12H2M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41M12 20v-2M12 4V2"/></svg>
+        </div>
+        <div class="aqa-label">Platform Settings</div>
+        <div class="aqa-sub">Fees, platform name, and more</div>
+      </a>
+    </div>
+
+    <!-- Recent orders -->
+    <div class="dash-section-header">
+      <h2>Recent orders</h2>
+      <a href="/admin/orders" class="section-link">View all</a>
+    </div>
+
+    {% if recent_orders %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Network</th>
+            <th>Customer</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in recent_orders %}
+          <tr>
+            <td><code class="ref-code">{{ o['paystack_reference'] }}</code></td>
+            <td><span class="net-badge net-{{ o['network'] }}">{{ o['network']|upper }}</span></td>
+            <td class="td-phone">{{ o['customer_phone'] }}</td>
+            <td>GHS {{ '%.2f'|format(o['amount_pesewas'] / 100) }}</td>
+            <td><span class="status-pill status-{{ o['status'] }}">{{ o['status'] }}</span></td>
+            <td class="td-date">{{ o['created_at'][:10] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-dash">
+      <h3>No orders yet</h3>
+      <p>Orders will appear here as customers make purchases.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

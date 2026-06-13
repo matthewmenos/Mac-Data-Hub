@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#006B3F" />
+  <meta name="description" content="Buy MTN, Telecel and AirtelTigo data bundles instantly. Fast, affordable, and delivered in seconds." />
+  <title>{% block title %}Mac Data Hub{% endblock %}</title>
+
+  <link rel="manifest" href="/static/manifest.json" />
+  <link rel="icon" href="/static/icons/icon-192.png" type="image/png" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+  <link rel="stylesheet" href="/static/css/main.css" />
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/" class="logo">
+        <div class="logo-mark">M</div>
+        <span class="logo-text">Mac Data Hub</span>
+      </a>
+
+      <nav class="nav-links" id="nav-links">
+        <a href="/" class="nav-link">Buy Data</a>
+        {% if session.get('role') == 'admin' %}
+          <a href="/admin" class="nav-link">Admin</a>
+          <a href="/logout" class="btn btn-ghost btn-sm">Sign out</a>
+        {% elif session.get('role') == 'reseller' %}
+          <a href="/dashboard" class="nav-link">Dashboard</a>
+          <a href="/logout" class="btn btn-ghost btn-sm">Sign out</a>
+        {% else %}
+          <a href="/apply" class="nav-link">Become a Reseller</a>
+          <a href="/login" class="btn btn-primary btn-sm">Sign in</a>
+        {% endif %}
+      </nav>
+
+      <button class="nav-toggle" id="nav-toggle" aria-label="Open menu" onclick="toggleNav()">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container" id="flash-container">
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">
+            <span>{{ message }}</span>
+            <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <div class="logo-mark logo-mark-sm">M</div>
+        <div>
+          <div class="footer-name">Mac Data Hub</div>
+          <div class="footer-tagline">Affordable data for every Ghanaian number.</div>
+        </div>
+      </div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <div class="footer-col-title">Buy Data</div>
+          <a href="/?net=mtn">MTN Bundles</a>
+          <a href="/?net=telecel">Telecel Bundles</a>
+          <a href="/?net=airteltigo">AirtelTigo Bundles</a>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-title">Resellers</div>
+          <a href="/apply">Become a Reseller</a>
+          <a href="/login">Reseller Login</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container">
+        <span>&copy; {{ now.year if now is defined else '2025' }} Mac Data Hub. All rights reserved.</span>
+        <span>Payments secured by Paystack</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/static/js/main.js"></script>
+  {% block scripts %}{% endblock %}
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/static/sw.js');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Settings — Admin{% endblock %}
+
+{% block content %}
+<div class="dash-layout">
+  {% include "partials/admin_nav.html" %}
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <h1 class="dash-page-title">Platform settings</h1>
+        <p class="dash-page-sub">Control fees, platform name, and other global options.</p>
+      </div>
+    </div>
+
+    <div class="settings-card">
+      <form id="settings-form" novalidate>
+
+        <div class="settings-group">
+          <div class="settings-group-title">General</div>
+          <div class="field">
+            <label for="platform_name">Platform name</label>
+            <input type="text" id="platform_name" name="platform_name"
+                   value="{{ settings.get('platform_name', 'Mac Data Hub') }}" required />
+            <span class="field-hint">Shown in the browser tab and footer.</span>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-title">Reseller fees</div>
+          <div class="field-row">
+            <div class="field">
+              <label for="reseller_registration_fee_pesewas">Registration fee (pesewas)</label>
+              <input type="number" id="reseller_registration_fee_pesewas"
+                     name="reseller_registration_fee_pesewas"
+                     value="{{ settings.get('reseller_registration_fee_pesewas', '5000') }}"
+                     min="0" required />
+              <span class="field-hint">
+                Currently GHS {{ '%.2f'|format(settings.get('reseller_registration_fee_pesewas', '5000')|int / 100) }}
+              </span>
+            </div>
+            <div class="field">
+              <label for="min_withdrawal_pesewas">Min. withdrawal (pesewas)</label>
+              <input type="number" id="min_withdrawal_pesewas"
+                     name="min_withdrawal_pesewas"
+                     value="{{ settings.get('min_withdrawal_pesewas', '10000') }}"
+                     min="0" required />
+              <span class="field-hint">
+                Currently GHS {{ '%.2f'|format(settings.get('min_withdrawal_pesewas', '10000')|int / 100) }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div id="settings-error" class="form-error hidden"></div>
+        <div id="settings-success" class="form-success hidden"></div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary btn-lg">Save settings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/admin_settings.js"></script>
+{% endblock %}

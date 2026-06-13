@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Page not found — Mac Data Hub{% endblock %}
+
+{% block content %}
+<div class="verify-page">
+  <div class="container">
+    <div class="verify-card">
+      <div class="verify-icon-wrap" style="background:#fee2e2; color:#991b1b;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <h1>Page not found</h1>
+      <p class="verify-msg">The page or store you're looking for doesn't exist or may have moved.</p>
+      <div class="verify-actions">
+        <a href="/" class="btn btn-primary btn-lg">Back to homepage</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

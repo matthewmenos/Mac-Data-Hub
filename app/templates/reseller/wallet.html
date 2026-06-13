@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Wallet — Mac Data Hub{% endblock %}
+
+{% block content %}
+<div class="dash-layout">
+  {% include "partials/reseller_nav.html" %}
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <h1 class="dash-page-title">Wallet</h1>
+        <p class="dash-page-sub">Your earnings from sales, ready to withdraw.</p>
+      </div>
+    </div>
+
+    <!-- Balance card -->
+    <div class="wallet-balance-card">
+      <div class="wbc-label">Available balance</div>
+      <div class="wbc-amount">GHS {{ '%.2f'|format(user['wallet_pesewas'] / 100) }}</div>
+      <div class="wbc-sub">Earned from your store sales</div>
+    </div>
+
+    <!-- Withdraw form -->
+    <div class="withdraw-section">
+      <h2>Request a withdrawal</h2>
+      <p class="withdraw-sub">Funds are sent to your mobile money account via Paystack.</p>
+
+      <div class="withdraw-card">
+        <form id="withdraw-form" novalidate>
+          <div class="field">
+            <label for="amount">Amount to withdraw (GHS)</label>
+            <div class="input-with-icon">
+              <span class="input-icon input-icon-text">GHS</span>
+              <input type="number" id="amount" name="amount"
+                     min="1" step="0.01"
+                     max="{{ '%.2f'|format(user['wallet_pesewas'] / 100) }}"
+                     placeholder="0.00" required />
+            </div>
+            <span class="field-hint">Available: GHS {{ '%.2f'|format(user['wallet_pesewas'] / 100) }}</span>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="mobile_number">Mobile money number</label>
+              <input type="tel" id="mobile_number" name="mobile_number"
+                     placeholder="0241 234 567" required />
+            </div>
+            <div class="field">
+              <label for="network">Network</label>
+              <select id="network" name="network" required>
+                <option value="">Select network</option>
+                <option value="mtn">MTN Mobile Money</option>
+                <option value="telecel">Telecel Cash</option>
+                <option value="airteltigo">AirtelTigo Money</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="withdraw-error" class="form-error hidden"></div>
+          <div id="withdraw-success" class="form-success hidden"></div>
+
+          <button type="submit" class="btn btn-primary btn-lg" id="withdraw-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+            Request withdrawal
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Withdrawal history -->
+    <div class="dash-section-header">
+      <h2>Withdrawal history</h2>
+    </div>
+
+    {% if withdrawals %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Amount</th>
+            <th>Mobile number</th>
+            <th>Network</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for w in withdrawals %}
+          <tr>
+            <td class="td-bold">GHS {{ '%.2f'|format(w['amount_pesewas'] / 100) }}</td>
+            <td>{{ w['mobile_number'] }}</td>
+            <td><span class="net-badge net-{{ w['network'] }}">{{ w['network']|upper }}</span></td>
+            <td><span class="status-pill status-{{ w['status'] }}">{{ w['status'] }}</span></td>
+            <td class="td-date">{{ w['created_at'][:10] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-dash">
+      <div class="empty-dash-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      </div>
+      <h3>No withdrawals yet</h3>
+      <p>Your wallet earns automatically from sales. Request a withdrawal anytime.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/wallet.js"></script>
+{% endblock %}

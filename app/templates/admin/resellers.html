@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Resellers — Admin{% endblock %}
+
+{% block content %}
+<div class="dash-layout">
+  {% include "partials/admin_nav.html" %}
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <h1 class="dash-page-title">Resellers</h1>
+        <p class="dash-page-sub">All registered reseller accounts.</p>
+      </div>
+    </div>
+
+    {% if resellers %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Store</th>
+            <th>Wallet</th>
+            <th>Status</th>
+            <th>Joined</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in resellers %}
+          <tr>
+            <td class="td-bold">{{ r['full_name'] }}</td>
+            <td class="td-muted">{{ r['email'] }}</td>
+            <td>
+              {% if r['slug'] %}
+              <a href="/s/{{ r['slug'] }}" target="_blank" class="table-link">
+                /s/{{ r['slug'] }}
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </a>
+              {% else %}—{% endif %}
+            </td>
+            <td>GHS {{ '%.2f'|format(r['wallet_pesewas'] / 100) }}</td>
+            <td>
+              <span class="status-pill {{ 'status-dispatched' if r['is_active'] else 'status-failed' }}">
+                {{ 'Active' if r['is_active'] else 'Inactive' }}
+              </span>
+            </td>
+            <td class="td-date">{{ r['created_at'][:10] }}</td>
+            <td>
+              <button class="btn btn-ghost btn-sm toggle-btn"
+                      data-id="{{ r['id'] }}"
+                      data-active="{{ r['is_active'] }}">
+                {{ 'Deactivate' if r['is_active'] else 'Activate' }}
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-dash">
+      <h3>No resellers yet</h3>
+      <p>Resellers will appear here after registering and paying the fee.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/admin_resellers.js"></script>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}Buy Data Bundles in Ghana — Mac Data Hub{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container hero-inner">
+    <div class="hero-text">
+      <div class="hero-badge">Ghana's fastest data top-up</div>
+      <h1>Data bundles delivered in seconds.</h1>
+      <p class="hero-sub">Top up any MTN, Telecel or AirtelTigo number instantly. No account needed — just pick a bundle and pay.</p>
+      <div class="hero-actions">
+        <a href="#bundles" class="btn btn-gold btn-lg">Browse Bundles</a>
+        <a href="/apply" class="btn btn-outline-white btn-lg">Become a Reseller</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-card-stack">
+        <div class="hero-phone-card">
+          <div class="hpc-label">Delivered to</div>
+          <div class="hpc-number">0241 234 567</div>
+          <div class="hpc-network mtn-color">MTN</div>
+        </div>
+        <div class="hero-stat-pill">
+          <div class="hsp-dot"></div>
+          <span>Bundle active in &lt;10 seconds</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Trust bar -->
+<div class="trust-bar">
+  <div class="container trust-bar-inner">
+    <div class="trust-item">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      <span>No account required</span>
+    </div>
+    <div class="trust-item">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>Delivered in seconds</span>
+    </div>
+    <div class="trust-item">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <span>Secured by Paystack</span>
+    </div>
+    <div class="trust-item">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.69h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.29 6.29l1.28-1.28a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      <span>All Ghana networks</span>
+    </div>
+  </div>
+</div>
+
+<!-- Bundles -->
+<section class="bundles-section" id="bundles">
+  <div class="container">
+    <div class="section-header">
+      <h2>Choose your bundle</h2>
+      <p>All bundles are for Ghana numbers only.</p>
+    </div>
+
+    <!-- Network tabs -->
+    <div class="tab-bar" role="tablist">
+      <button class="tab active" data-net="all" role="tab">All Networks</button>
+      <button class="tab" data-net="mtn" role="tab">
+        <span class="tab-dot mtn-dot"></span> MTN
+      </button>
+      <button class="tab" data-net="telecel" role="tab">
+        <span class="tab-dot telecel-dot"></span> Telecel
+      </button>
+      <button class="tab" data-net="airteltigo" role="tab">
+        <span class="tab-dot airteltigo-dot"></span> AirtelTigo
+      </button>
+    </div>
+
+    {% if bundles %}
+    <div class="bundle-grid" id="bundle-grid">
+      {% for b in bundles %}
+      <div class="bundle-card" data-net="{{ b['network'] }}">
+        <div class="bc-header bc-{{ b['network'] }}">
+          <span class="bc-network">{{ b['network']|upper }}</span>
+          <span class="bc-validity">{{ b['validity_days'] }} day{{ 's' if b['validity_days'] != 1 }}</span>
+        </div>
+        <div class="bc-body">
+          <div class="bc-volume">{{ b['label'] }}</div>
+          <div class="bc-price">GHS {{ '%.2f'|format(b['base_price_pesewas'] / 100) }}</div>
+          <a href="/checkout?bundle_id={{ b['id'] }}" class="btn btn-primary btn-block">
+            Buy Now
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-bundles">
+      <div class="empty-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <h3>No bundles available yet</h3>
+      <p>Check back shortly — bundles are being added.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="how-section">
+  <div class="container">
+    <div class="section-header">
+      <h2>How it works</h2>
+      <p>Three steps and your data is on its way.</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-icon step-icon-1">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <h3>1. Pick a bundle</h3>
+        <p>Browse by network and choose the size that suits you.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-icon step-icon-2">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5"/><path d="M1 1l22 22"/></svg>
+        </div>
+        <h3>2. Enter your number</h3>
+        <p>Type in the Ghana number you want to top up. No account needed.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-icon step-icon-3">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <h3>3. Pay with Paystack</h3>
+        <p>Mobile money or card — your data arrives in seconds.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Reseller CTA -->
+<section class="reseller-cta">
+  <div class="container reseller-cta-inner">
+    <div class="rcta-text">
+      <h2>Earn money selling data.</h2>
+      <p>Create your own store, set your own prices, and earn profit on every sale. Your customers get data. You get paid.</p>
+      <a href="/apply" class="btn btn-gold btn-lg">Start Reselling</a>
+    </div>
+    <div class="rcta-stats">
+      <div class="rcta-stat">
+        <div class="rcta-num">GHS 50+</div>
+        <div class="rcta-label">Avg. daily earnings</div>
+      </div>
+      <div class="rcta-stat">
+        <div class="rcta-num">3 min</div>
+        <div class="rcta-label">To set up your store</div>
+      </div>
+      <div class="rcta-stat">
+        <div class="rcta-num">0%</div>
+        <div class="rcta-label">Platform fee on sales</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/home.js"></script>
+{% endblock %}

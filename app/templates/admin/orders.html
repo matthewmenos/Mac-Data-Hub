@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Orders — Admin{% endblock %}
+
+{% block content %}
+<div class="dash-layout">
+  {% include "partials/admin_nav.html" %}
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <h1 class="dash-page-title">All orders</h1>
+        <p class="dash-page-sub">Every bundle purchase across the platform.</p>
+      </div>
+    </div>
+
+    {% if orders %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Network</th>
+            <th>Customer</th>
+            <th>Amount</th>
+            <th>Profit paid</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in orders %}
+          <tr>
+            <td><code class="ref-code">{{ o['paystack_reference'] or '—' }}</code></td>
+            <td><span class="net-badge net-{{ o['network'] }}">{{ o['network']|upper }}</span></td>
+            <td class="td-phone">{{ o['customer_phone'] }}</td>
+            <td>GHS {{ '%.2f'|format(o['amount_pesewas'] / 100) }}</td>
+            <td class="td-profit">GHS {{ '%.2f'|format(o['profit_pesewas'] / 100) }}</td>
+            <td><span class="status-pill status-{{ o['status'] }}">{{ o['status'] }}</span></td>
+            <td class="td-date">{{ o['created_at'][:10] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-dash">
+      <h3>No orders yet</h3>
+      <p>Orders will appear here after customers make purchases.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

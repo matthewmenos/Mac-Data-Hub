@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Bundles — Admin{% endblock %}
+
+{% block content %}
+<div class="dash-layout">
+  {% include "partials/admin_nav.html" %}
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <h1 class="dash-page-title">Data bundles</h1>
+        <p class="dash-page-sub">Manage the master bundle catalogue that resellers and guests see.</p>
+      </div>
+      <button class="btn btn-primary" id="add-bundle-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add bundle
+      </button>
+    </div>
+
+    {% if bundles %}
+    <div class="table-wrap">
+      <table class="data-table" id="bundles-table">
+        <thead>
+          <tr>
+            <th>Label</th>
+            <th>Network</th>
+            <th>Volume</th>
+            <th>Validity</th>
+            <th>Base price</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in bundles %}
+          <tr data-id="{{ b['id'] }}">
+            <td class="td-bold">{{ b['label'] }}</td>
+            <td><span class="net-badge net-{{ b['network'] }}">{{ b['network']|upper }}</span></td>
+            <td>{{ b['volume_mb'] }} MB</td>
+            <td>{{ b['validity_days'] }}d</td>
+            <td>GHS {{ '%.2f'|format(b['base_price_pesewas'] / 100) }}</td>
+            <td>
+              <span class="status-pill {{ 'status-dispatched' if b['is_active'] else 'status-failed' }}">
+                {{ 'Active' if b['is_active'] else 'Inactive' }}
+              </span>
+            </td>
+            <td class="td-actions">
+              <button class="btn btn-ghost btn-sm edit-btn"
+                      data-bundle='{{ b | tojson }}'>Edit</button>
+              <button class="btn btn-danger btn-sm delete-btn"
+                      data-id="{{ b['id'] }}">Delete</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-dash">
+      <div class="empty-dash-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <h3>No bundles yet</h3>
+      <p>Add your first data bundle to get started.</p>
+      <button class="btn btn-primary" id="add-bundle-btn-empty">Add bundle</button>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Add / Edit modal -->
+<div class="modal hidden" id="bundle-modal">
+  <div class="modal-backdrop" id="modal-backdrop"></div>
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="modal-title">Add bundle</h3>
+      <button class="modal-close" id="cancel-modal" aria-label="Close">&times;</button>
+    </div>
+
+    <form id="bundle-form" novalidate>
+      <input type="hidden" id="bundle-id" name="id" />
+
+      <div class="field-row">
+        <div class="field">
+          <label for="b-network">Network</label>
+          <select id="b-network" name="network" required>
+            <option value="mtn">MTN</option>
+            <option value="telecel">Telecel</option>
+            <option value="airteltigo">AirtelTigo</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="b-offer-slug">GigzHub offer slug</label>
+          <input type="text" id="b-offer-slug" name="offer_slug"
+                 placeholder="e.g. mtn-1gb-30d" required />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="b-label">Display label</label>
+        <input type="text" id="b-label" name="label"
+               placeholder="e.g. 1GB — 30 Days" required />
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="b-volume">Volume (MB)</label>
+          <input type="number" id="b-volume" name="volume_mb" min="1" required />
+        </div>
+        <div class="field">
+          <label for="b-validity">Validity (days)</label>
+          <input type="number" id="b-validity" name="validity_days" min="1" required />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="b-price">Base price (pesewas)</label>
+        <input type="number" id="b-price" name="base_price_pesewas" min="1" required />
+        <span class="field-hint">100 pesewas = GHS 1.00</span>
+      </div>
+
+      <div id="bundle-error" class="form-error hidden"></div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="cancel-modal-2">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="save-bundle-btn">Save bundle</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/admin_bundles.js"></script>
+{% endblock %}

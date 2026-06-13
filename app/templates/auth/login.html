@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Sign in — Mac Data Hub{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="container auth-container">
+    <div class="auth-card">
+      <div class="auth-card-header">
+        <div class="logo-mark auth-logo-mark">M</div>
+        <h1>Welcome back</h1>
+        <p>Sign in to your reseller account.</p>
+      </div>
+
+      <form method="POST" action="/login" novalidate>
+        <div class="field">
+          <label for="email">Email address</label>
+          <div class="input-with-icon">
+            <span class="input-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </span>
+            <input type="email" id="email" name="email" placeholder="you@example.com"
+                   required autocomplete="email" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="password">
+            Password
+            <a href="#" class="label-forgot">Forgot password?</a>
+          </label>
+          <div class="input-with-icon">
+            <span class="input-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </span>
+            <input type="password" id="password" name="password"
+                   required autocomplete="current-password" />
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg">Sign in</button>
+      </form>
+
+      <div class="auth-divider"><span>New here?</span></div>
+
+      <a href="/apply" class="btn btn-ghost btn-block">Create a reseller account</a>
+
+      <div class="auth-back">
+        <a href="/">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          Back to buying data
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
