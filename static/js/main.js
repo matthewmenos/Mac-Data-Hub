@@ -131,7 +131,52 @@ document.addEventListener('click', function (e) {
 
 // Poll notifications every 90 seconds while the page is open (only when URL is defined)
 document.addEventListener('DOMContentLoaded', function () {
-  if (!window._NOTIF_URL) return;
-  _fetchNotifications();
-  setInterval(_fetchNotifications, 90_000);
+  if (window._NOTIF_URL) {
+    _fetchNotifications();
+    setInterval(_fetchNotifications, 90_000);
+  }
+  _initPush();
 });
+
+// ── Web Push ──────────────────────────────────────────────────
+function _urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw     = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function _initPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  // Don't ask on pages that aren't dashboard/admin (avoids annoying guests)
+  const isDash = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/admin');
+  if (!isDash) return;
+
+  try {
+    const reg = await navigator.serviceWorker.ready;
+
+    // Fetch VAPID public key
+    const keyResp = await fetch('/push/vapid-public-key');
+    if (!keyResp.ok) return;
+    const { key } = await keyResp.json();
+
+    // Check existing subscription
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      // Request permission first
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') return;
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly:      true,
+        applicationServerKey: _urlBase64ToUint8Array(key),
+      });
+    }
+
+    // Send subscription to server
+    await fetch('/push/subscribe', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(sub.toJSON()),
+    });
+  } catch (_) { /* push not supported or blocked — fail silently */ }
+}

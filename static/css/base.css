@@ -380,3 +380,8 @@ ul { list-style: none; }
   .tab-bar { gap: .35rem; }
   .tab     { padding: .38rem .75rem; font-size: .77rem; }
 }
+
+/* ── PWA standalone mode ─────────────────────────────────── */
+@media (display-mode: standalone) {
+  .pwa-hide { display: none !important; }
+}

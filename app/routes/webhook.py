@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify, current_app
 from ..services.db import global_db, user_db
 from ..services.paystack import verify_webhook_signature
 from ..services.gigzhub import dispatch_bundle
+from ..services.push import broadcast_push
 
 webhook_bp = Blueprint("webhook", __name__)
 
@@ -95,6 +96,25 @@ def _handle_order(config, reference: str, metadata: dict):
                 ).fetchone()
                 label = bundle_row["label"] if bundle_row else order["network"]
                 _mirror_order_to_user_db(config, store["user_id"], order, label)
+                # Notify reseller
+                profit_ghs = "GHS %.2f" % (order["profit_pesewas"] / 100)
+                try:
+                    broadcast_push(config, store["user_id"],
+                                   "Order dispatched! 🎉",
+                                   f"{label} sent to {order['customer_phone']} — +{profit_ghs} profit",
+                                   "/dashboard/orders")
+                except Exception:
+                    pass
+
+        # Notify admin of every new order
+        try:
+            bundle_row = db.execute(
+                "SELECT label FROM data_bundles WHERE id=?", (order["bundle_id"],)
+            ).fetchone() if status == "failed" else None
+            amt_ghs = "GHS %.2f" % (order["amount_pesewas"] / 100)
+            _notify_admins(config, status, order, amt_ghs)
+        except Exception:
+            pass
 
 
 def _mirror_order_to_user_db(config, user_id: str, order, bundle_label: str = ""):
@@ -117,3 +137,18 @@ def _mirror_order_to_user_db(config, user_id: str, order, bundle_label: str = ""
 def _get_offer_slug(db, bundle_id: str) -> str:
     row = db.execute("SELECT offer_slug FROM data_bundles WHERE id=?", (bundle_id,)).fetchone()
     return row["offer_slug"] if row else ""
+
+
+def _notify_admins(config, status: str, order, amt_ghs: str):
+    """Push to all push_subscriptions rows that belong to the admin (user_id IS NULL treated as guest;
+    admin subscriptions are stored with user_id = 'admin')."""
+    if status == "dispatched":
+        title = "New order dispatched"
+        body  = f"{order['network'].upper()} bundle to {order['customer_phone']} — {amt_ghs}"
+    else:
+        title = "Order failed"
+        body  = f"Bundle dispatch failed for {order['customer_phone']}"
+    try:
+        broadcast_push(config, "admin", title, body, "/admin/orders")
+    except Exception:
+        pass

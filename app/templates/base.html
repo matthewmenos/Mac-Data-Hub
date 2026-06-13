@@ -79,7 +79,7 @@
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="site-footer">
+  <footer class="site-footer pwa-hide">
     <div class="container footer-inner">
       <div class="footer-brand">
         <div class="logo-mark logo-mark-sm">M</div>
@@ -114,7 +114,7 @@
   {% block scripts %}{% endblock %}
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/static/sw.js');
+      navigator.serviceWorker.register('/sw.js', { scope: '/' });
     }
   </script>
 </body>

@@ -81,6 +81,16 @@ CREATE TABLE IF NOT EXISTS wallet_withdrawals (
     created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Web Push subscriptions (one row per browser/device per user)
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id          TEXT PRIMARY KEY,
+    user_id     TEXT,                               -- NULL = anonymous guest
+    endpoint    TEXT UNIQUE NOT NULL,
+    p256dh      TEXT NOT NULL,
+    auth        TEXT NOT NULL,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Guest orders (store_id NULL = direct/admin store purchase)
 CREATE TABLE IF NOT EXISTS orders (
     id                  TEXT PRIMARY KEY,

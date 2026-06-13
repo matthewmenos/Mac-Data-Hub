@@ -74,11 +74,13 @@ def create_app():
     from .routes.reseller import reseller_bp
     from .routes.admin import admin_bp
     from .routes.webhook import webhook_bp
+    from .routes.push import push_bp
 
     app.register_blueprint(public_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(reseller_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(webhook_bp)
+    app.register_blueprint(push_bp)
 
     return app

@@ -1,9 +1,20 @@
 import uuid
-from flask import Blueprint, render_template, request, jsonify, current_app, redirect, url_for
+from flask import Blueprint, render_template, request, jsonify, current_app, redirect, url_for, send_from_directory
+import os
 from ..services.db import global_db
 from ..services.paystack import initialize_transaction
 
 public_bp = Blueprint("public", __name__)
+
+
+@public_bp.route("/sw.js")
+def service_worker():
+    """Serve SW from root so it has scope over the whole origin."""
+    static_dir = os.path.join(current_app.root_path, "..", "static")
+    resp = send_from_directory(os.path.abspath(static_dir), "sw.js")
+    resp.headers["Service-Worker-Allowed"] = "/"
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return resp
 
 
 @public_bp.route("/")
