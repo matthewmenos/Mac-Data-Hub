@@ -44,6 +44,8 @@ def create_app():
             "whatsapp_channel_url": "",
             "nav_pending_orders": 0,
             "nav_pending_withdrawals": 0,
+            "announcement_text": "",
+            "announcement_type": "info",
         }
         role = session.get("role")
         try:
@@ -52,6 +54,16 @@ def create_app():
                     "SELECT value FROM app_settings WHERE key='whatsapp_channel_url'"
                 ).fetchone()
                 ctx["whatsapp_channel_url"] = wa_row["value"] if wa_row else ""
+
+                ann_text = db.execute(
+                    "SELECT value FROM app_settings WHERE key='announcement_text'"
+                ).fetchone()
+                ann_type = db.execute(
+                    "SELECT value FROM app_settings WHERE key='announcement_type'"
+                ).fetchone()
+                ctx["announcement_text"] = ann_text["value"] if ann_text else ""
+                ctx["announcement_type"] = ann_type["value"] if ann_type else "info"
+
                 if role == "admin" and request.path.startswith("/admin"):
                     ctx["nav_pending_orders"] = db.execute(
                         "SELECT COUNT(*) as c FROM orders WHERE status='pending'"

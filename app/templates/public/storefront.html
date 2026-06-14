@@ -44,6 +44,59 @@
 </div>
 {% endif %}
 
+<!-- Place New Order — network selector cards -->
+<div class="buy-page-header">
+  <div class="container">
+    <h1 class="buy-page-title">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      Place New Order
+    </h1>
+  </div>
+</div>
+
+<section class="network-section">
+  <div class="container">
+    <div class="network-grid">
+      {% set has_mtn       = pricing | selectattr('network','equalto','mtn')       | list | length > 0 %}
+      {% set has_telecel   = pricing | selectattr('network','equalto','telecel')   | list | length > 0 %}
+      {% set has_airteltigo= pricing | selectattr('network','equalto','airteltigo')| list | length > 0 %}
+
+      {% if has_mtn %}
+      <button class="net-card net-card-mtn" onclick="openOrderModal('mtn','MTN Data')">
+        <svg class="net-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+          <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>
+        </svg>
+        <div class="net-card-name">MTN Data</div>
+        <div class="net-card-btn">BUY NOW</div>
+      </button>
+      {% endif %}
+
+      {% if has_airteltigo %}
+      <button class="net-card net-card-airteltigo" onclick="openOrderModal('airteltigo','AirtelTigo')">
+        <svg class="net-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+          <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>
+        </svg>
+        <div class="net-card-name">AirtelTigo</div>
+        <div class="net-card-btn">BUY NOW</div>
+      </button>
+      {% endif %}
+
+      {% if has_telecel %}
+      <button class="net-card net-card-telecel" onclick="openOrderModal('telecel','Telecel Data')">
+        <svg class="net-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+          <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>
+        </svg>
+        <div class="net-card-name">Telecel Data</div>
+        <div class="net-card-btn">BUY NOW</div>
+      </button>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
 <section class="bundles-section" id="bundles">
   <div class="container">
     <div class="section-header">

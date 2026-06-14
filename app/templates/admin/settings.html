@@ -87,13 +87,17 @@
           <div class="settings-grid">
             <div class="field">
               <label for="paystack_secret_key">Secret key</label>
-              <div class="input-with-icon">
+              <div class="input-with-icon pw-wrap">
                 <span class="input-icon">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </span>
                 <input type="password" id="paystack_secret_key" name="paystack_secret_key"
                        value="{{ settings.get('paystack_secret_key', '') }}"
                        placeholder="sk_live_…" autocomplete="new-password" />
+                <button type="button" class="pw-reveal" onclick="togglePw('paystack_secret_key',this)" aria-label="Show key" tabindex="-1">
+                  <svg class="pw-eye" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="pw-eye-off" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
               </div>
               <span class="field-hint">Keep this secret. Never share or commit it.</span>
             </div>
@@ -116,13 +120,17 @@
           <div class="settings-grid">
             <div class="field">
               <label for="gigzhub_api_key">GigzHub API key</label>
-              <div class="input-with-icon">
+              <div class="input-with-icon pw-wrap">
                 <span class="input-icon">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </span>
                 <input type="password" id="gigzhub_api_key" name="gigzhub_api_key"
                        value="{{ settings.get('gigzhub_api_key', '') }}"
                        placeholder="Your GigzHub API key" autocomplete="new-password" />
+                <button type="button" class="pw-reveal" onclick="togglePw('gigzhub_api_key',this)" aria-label="Show key" tabindex="-1">
+                  <svg class="pw-eye" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="pw-eye-off" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
               </div>
               <span class="field-hint">Used to dispatch data bundles via GigzHub.net.</span>
             </div>
@@ -153,6 +161,33 @@
           </div>
         </div>
 
+        <!-- Announcement Banner -->
+        <div class="settings-section">
+          <h2>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:.4rem;vertical-align:middle"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/></svg>
+            Announcement Banner
+          </h2>
+          <div class="settings-grid">
+            <div class="field" style="grid-column:1/-1">
+              <label for="announcement_text">Banner message</label>
+              <input type="text" id="announcement_text" name="announcement_text"
+                     value="{{ settings.get('announcement_text', '') }}"
+                     placeholder="e.g. Scheduled maintenance on Saturday 10pm – 11pm GMT" />
+              <span class="field-hint">Displayed as a sitewide banner on all pages. Leave empty to hide it.</span>
+            </div>
+            <div class="field">
+              <label for="announcement_type">Banner type</label>
+              <select id="announcement_type" name="announcement_type">
+                <option value="info"    {% if settings.get('announcement_type','info')=='info'    %}selected{% endif %}>Info (blue)</option>
+                <option value="warning" {% if settings.get('announcement_type','info')=='warning' %}selected{% endif %}>Warning (amber)</option>
+                <option value="error"   {% if settings.get('announcement_type','info')=='error'   %}selected{% endif %}>Critical (red)</option>
+                <option value="success" {% if settings.get('announcement_type','info')=='success' %}selected{% endif %}>Success (green)</option>
+              </select>
+              <span class="field-hint">Controls the banner color and icon.</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Feedback -->
         <div id="settings-error" class="form-error hidden"></div>
         <div id="settings-success" class="form-success hidden">
@@ -165,6 +200,38 @@
         </div>
 
       </form>
+
+      <!-- Broadcast to Resellers (separate form — sends push notifications) -->
+      <div class="settings-section" style="margin-top:1.5rem">
+        <h2>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:.4rem;vertical-align:middle"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Broadcast to Resellers
+        </h2>
+        <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:1.25rem">Send a push notification to all resellers who have notifications enabled.</p>
+        <form id="broadcast-form" novalidate>
+          <div class="settings-grid">
+            <div class="field">
+              <label for="bc-title">Notification title</label>
+              <input type="text" id="bc-title" name="title" placeholder="e.g. New bundles added" required />
+            </div>
+            <div class="field" style="grid-column:1/-1">
+              <label for="bc-body">Message body</label>
+              <textarea id="bc-body" name="body" rows="3" placeholder="e.g. MTN 10GB bundle now available at a lower price. Check your pricing page." required style="resize:vertical"></textarea>
+            </div>
+          </div>
+          <div id="broadcast-error"   class="form-error hidden"></div>
+          <div id="broadcast-success" class="form-success hidden">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Broadcast sent successfully.
+          </div>
+          <div class="form-actions" style="margin-top:.75rem">
+            <button type="submit" class="btn btn-primary" id="broadcast-btn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Send Broadcast
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </div>
@@ -172,4 +239,47 @@
 
 {% block scripts %}
 <script src="/static/js/admin_settings.js"></script>
+<script>
+function togglePw(id, btn) {
+  var inp = document.getElementById(id);
+  var show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.querySelector('.pw-eye').style.display     = show ? 'none' : '';
+  btn.querySelector('.pw-eye-off').style.display = show ? ''     : 'none';
+}
+
+document.getElementById('broadcast-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var btn  = document.getElementById('broadcast-btn');
+  var err  = document.getElementById('broadcast-error');
+  var ok   = document.getElementById('broadcast-success');
+  var title = document.getElementById('bc-title').value.trim();
+  var body  = document.getElementById('bc-body').value.trim();
+  if (!title || !body) { err.textContent = 'Title and message are required.'; err.classList.remove('hidden'); return; }
+  err.classList.add('hidden'); ok.classList.add('hidden');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    var res = await fetch('/admin/broadcast', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({title, body})
+    });
+    var data = await res.json();
+    if (data.ok) {
+      ok.classList.remove('hidden');
+      document.getElementById('bc-title').value = '';
+      document.getElementById('bc-body').value  = '';
+    } else {
+      err.textContent = data.error || 'Failed to send broadcast.';
+      err.classList.remove('hidden');
+    }
+  } catch(ex) {
+    err.textContent = 'Network error. Please try again.';
+    err.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Broadcast';
+  }
+});
+</script>
 {% endblock %}

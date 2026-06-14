@@ -18,7 +18,7 @@
   width: 52px; height: 52px; border-radius: 14px;
   font-size: 1.5rem; font-weight: 900;
 }
-.auth-card h1 { font-size: 1.35rem; font-weight: 900; margin-bottom: .25rem; }
+.auth-card h1 { font-size: 1.3rem; font-weight: 900; margin-bottom: .25rem; color: var(--text); }
 .auth-card p  { font-size: .875rem; color: var(--text-muted); }
 
 .auth-divider {
@@ -37,6 +37,7 @@
 
 /* ---- Apply/Register hero ---- */
 .apply-hero { background: linear-gradient(135deg, var(--green), var(--green-dark)); color: #fff; padding: 3.5rem 0; }
+.apply-hero p, .apply-hero h1, .apply-hero h2, .apply-hero h3 { color: inherit; }
 .apply-hero-inner {
   display: flex; align-items: center; gap: 3rem; flex-wrap: wrap;
 }
@@ -47,9 +48,9 @@
   letter-spacing: .1em; padding: .25rem .75rem; border-radius: 99px; margin-bottom: 1rem;
 }
 .apply-hero-text h1 {
-  font-size: clamp(1.5rem, 4vw, 2.25rem); font-weight: 900; margin-bottom: .75rem; line-height: 1.2;
+  font-size: clamp(1.4rem, 4vw, 2.25rem); font-weight: 900; margin-bottom: .75rem; line-height: 1.2; color: inherit;
 }
-.apply-hero-text p { font-size: .95rem; opacity: .85; max-width: 440px; line-height: 1.65; margin-bottom: 1rem; }
+.apply-hero-text p { font-size: .95rem; opacity: .85; max-width: 440px; line-height: 1.65; margin-bottom: 1rem; color: inherit; }
 .apply-hero-fee {
   display: inline-block; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25);
   padding: .5rem 1rem; border-radius: var(--radius-sm); font-size: .9rem; margin-top: .5rem;
@@ -90,7 +91,7 @@
   border-radius: var(--radius); padding: 2.5rem 2rem; box-shadow: var(--shadow-md);
 }
 .register-card-header { margin-bottom: 1.75rem; }
-.register-card-header h2 { font-size: 1.35rem; font-weight: 900; margin-bottom: .3rem; }
+.register-card-header h2 { font-size: 1.25rem; font-weight: 900; margin-bottom: .3rem; color: var(--text); }
 .register-card-header p  { font-size: .875rem; color: var(--text-muted); }
 
 .register-fee-note {
@@ -134,10 +135,28 @@
   .apply-hero-perks { flex-direction: row; flex-wrap: wrap; gap: .75rem; }
   .perk-item        { min-width: calc(50% - .4rem); }
 }
+
+@media (max-width: 640px) {
+  .auth-page       { padding: 2rem 0 3rem; }
+  .apply-hero      { padding: 2.5rem 0; }
+  .register-section{ padding: 2rem 0 3.5rem; }
+  .verify-page     { padding: 2.5rem 0; }
+  .verify-card     { padding: 2rem 1.25rem; }
+  .apply-steps-section { padding: 2rem 0; }
+}
+
 @media (max-width: 540px) {
-  .auth-card        { padding: 1.75rem 1.25rem; }
-  .register-card    { padding: 1.75rem 1.25rem; }
+  .auth-card        { padding: 1.5rem 1.1rem; }
+  .register-card    { padding: 1.5rem 1.1rem; }
   .apply-steps      { flex-direction: column; }
   .apply-step-arrow { display: none; }
   .perk-item        { min-width: 100%; }
+  .hero-badge       { font-size: .65rem; padding: .2rem .6rem; }
+}
+
+@media (max-width: 420px) {
+  .auth-card     { padding: 1.25rem .9rem; }
+  .register-card { padding: 1.25rem .9rem; }
+  .verify-actions { flex-direction: column; }
+  .verify-actions .btn { width: 100%; }
 }

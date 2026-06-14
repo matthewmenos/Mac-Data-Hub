@@ -3,6 +3,7 @@ from functools import wraps
 from flask import (Blueprint, render_template, request, redirect,
                    url_for, session, current_app, jsonify)
 from ..services.db import global_db
+from ..services.push import broadcast_push
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -270,3 +271,31 @@ def settings():
         all_settings = {r["key"]: r["value"] for r in
                         db.execute("SELECT key, value FROM app_settings").fetchall()}
     return render_template("admin/settings.html", settings=all_settings)
+
+
+@admin_bp.route("/broadcast", methods=["POST"])
+@admin_required
+def broadcast():
+    """Send a push notification to all resellers."""
+    config = current_app.config
+    data  = request.get_json()
+    title = (data.get("title") or "").strip()
+    body  = (data.get("body")  or "").strip()
+    if not title or not body:
+        return jsonify({"ok": False, "error": "Title and message are required."}), 400
+
+    with global_db(config) as db:
+        reseller_ids = [
+            r["id"] for r in
+            db.execute("SELECT id FROM users WHERE role='reseller' AND is_active=1").fetchall()
+        ]
+
+    sent = 0
+    for uid in reseller_ids:
+        try:
+            broadcast_push(config, uid, title, body, url="/dashboard")
+            sent += 1
+        except Exception:
+            pass
+
+    return jsonify({"ok": True, "sent_to": sent})

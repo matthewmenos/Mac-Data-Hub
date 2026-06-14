@@ -74,3 +74,15 @@
   .checkout-container { grid-template-columns: 1fr; }
   .order-summary-card { position: static; }
 }
+
+@media (max-width: 640px) {
+  .checkout-page { padding: 1.5rem 0 3rem; }
+  .checkout-card { padding: 1.25rem; }
+  .order-summary-card { padding: 1.1rem; }
+  .checkout-header h1 { font-size: 1.15rem; }
+}
+
+@media (max-width: 420px) {
+  .checkout-card { padding: 1rem; }
+  .verify-card   { padding: 2rem 1.1rem; }
+}

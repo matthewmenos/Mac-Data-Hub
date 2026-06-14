@@ -13,20 +13,20 @@
   color: var(--white); font-size: 1.5rem; font-weight: 900;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.sf-badge { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; opacity: .7; margin-bottom: .35rem; }
-.sf-info h1 { font-size: 1.5rem; font-weight: 900; }
-.sf-desc    { font-size: .875rem; opacity: .85; margin-top: .35rem; }
+.sf-badge { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; opacity: .7; margin-bottom: .35rem; }
+.sf-info h1 { font-size: clamp(1.15rem, 4vw, 1.5rem); font-weight: 900; color: inherit; letter-spacing: -.02em; }
+.sf-desc    { font-size: .875rem; opacity: .85; margin-top: .35rem; color: inherit; }
 
 /* Trust bar (reused on storefront) */
 .trust-bar       { background: var(--white); border-bottom: 1px solid var(--border); }
-.trust-bar-inner { display: flex; align-items: center; gap: 2rem; padding: .85rem 0; flex-wrap: wrap; }
+.trust-bar-inner { display: flex; align-items: center; justify-content: center; gap: 1.5rem; padding: .85rem 0; flex-wrap: wrap; }
 .trust-item      { display: flex; align-items: center; gap: .45rem; font-size: .82rem; color: var(--text-2); font-weight: 500; }
 .trust-item svg  { color: var(--green); flex-shrink: 0; }
 
 /* WhatsApp channel bar */
-.whatsapp-bar { background: #f0fdf4; border-bottom: 1px solid #bbf7d0; }
+.whatsapp-bar { background: var(--wa-bar-bg, #f0fdf4); border-bottom: 1px solid var(--wa-bar-border, #bbf7d0); }
 .whatsapp-bar-inner { display: flex; align-items: center; gap: .75rem; padding: .7rem 0; flex-wrap: wrap; }
-.whatsapp-bar-inner span { flex: 1; font-size: .85rem; color: #166534; font-weight: 500; }
+.whatsapp-bar-inner span { flex: 1; min-width: 0; font-size: .85rem; color: var(--wa-bar-text, #166534); font-weight: 500; }
 .btn-whatsapp {
   background: #25D366; color: #fff; border: none;
   border-radius: var(--radius-sm); padding: .4rem 1rem;
@@ -88,10 +88,49 @@
   border-radius: var(--radius-sm); padding: .85rem 1rem;
   font-size: 1rem; font-weight: 800; margin-top: .4rem;
   transition: background var(--transition), box-shadow var(--transition);
-  letter-spacing: .02em;
+  letter-spacing: 0;
 }
 .om-pay-btn:hover:not(:disabled) { background: #1447c0; box-shadow: 0 4px 14px rgba(26,86,219,.35); }
 .om-pay-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+/* Place New Order — network cards (mirrored from home.css) */
+.buy-page-header {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 1.25rem 0 1rem;
+}
+.buy-page-title {
+  font-size: 1.35rem; font-weight: 900;
+  display: flex; align-items: center; gap: .65rem; color: var(--text);
+}
+.buy-page-title svg { color: var(--green); flex-shrink: 0; }
+
+.network-section { padding: 1.5rem 0; background: var(--bg); }
+.network-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;
+}
+.net-card {
+  border-radius: var(--radius);
+  padding: 1.5rem 1rem 1rem;
+  display: flex; flex-direction: column; align-items: center; gap: .65rem;
+  text-decoration: none; cursor: pointer; width: 100%; border: none;
+  transition: transform var(--transition), box-shadow var(--transition), filter var(--transition);
+  box-shadow: var(--shadow);
+}
+.net-card:hover  { transform: translateY(-3px); box-shadow: var(--shadow-md); text-decoration: none; filter: brightness(1.07); }
+.net-card:active { transform: scale(.97); }
+.net-card-mtn        { background: #f5a700; }
+.net-card-airteltigo { background: #0061af; }
+.net-card-telecel    { background: #CE1126; }
+.net-card-icon { width: 52px; height: 52px; stroke: rgba(255,255,255,.9); flex-shrink: 0; }
+.net-card-name { font-size: 1.05rem; font-weight: 900; color: #fff; text-align: center; line-height: 1.2; }
+.net-card-btn {
+  margin-top: .25rem;
+  background: rgba(255,255,255,.22); border: 1.5px solid rgba(255,255,255,.35);
+  border-radius: 99px; color: #fff; font-size: .78rem; font-weight: 800;
+  padding: .35rem 1.1rem; letter-spacing: .04em; transition: background var(--transition);
+}
+.net-card:hover .net-card-btn { background: rgba(255,255,255,.35); }
 
 @media (max-width: 640px) {
   .modal { align-items: flex-end; }
@@ -105,5 +144,18 @@
     from { transform: translateY(100%); opacity: 0; }
     to   { transform: translateY(0);    opacity: 1; }
   }
-  .trust-bar-inner { gap: 1rem; }
+  .network-grid { gap: .75rem; }
+  .net-card     { padding: 1.25rem .75rem .85rem; }
+  .net-card-icon{ width: 44px; height: 44px; }
+  .net-card-name{ font-size: .95rem; }
+  .sf-hero-inner { gap: .85rem; }
+  .sf-avatar     { width: 48px; height: 48px; font-size: 1.2rem; border-radius: 12px; }
+}
+
+@media (max-width: 480px) {
+  .trust-bar-inner { gap: .85rem; flex-direction: column; align-items: flex-start; padding: .75rem 0; }
+}
+
+@media (max-width: 420px) {
+  .trust-bar-inner { gap: .65rem; }
 }
