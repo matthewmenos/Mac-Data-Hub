@@ -4,6 +4,10 @@ from flask import (Blueprint, render_template, request, redirect,
                    url_for, session, current_app, jsonify)
 from ..services.db import global_db
 from ..services.push import broadcast_push
+from ..services.storage import upload_asset, delete_asset
+
+ALLOWED_LOGO_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+MAX_LOGO_BYTES = 2 * 1024 * 1024
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -271,6 +275,52 @@ def settings():
         all_settings = {r["key"]: r["value"] for r in
                         db.execute("SELECT key, value FROM app_settings").fetchall()}
     return render_template("admin/settings.html", settings=all_settings)
+
+
+@admin_bp.route("/settings/logo", methods=["POST"])
+@admin_required
+def upload_site_logo():
+    config = current_app.config
+    file = request.files.get("logo")
+    if not file or not file.filename:
+        return jsonify({"error": "No file provided."}), 400
+
+    content_type = file.content_type or ""
+    if content_type not in ALLOWED_LOGO_TYPES:
+        return jsonify({"error": "Only JPEG, PNG, WebP or GIF images are allowed."}), 400
+
+    file.seek(0, 2)
+    size = file.tell()
+    file.seek(0)
+    if size > MAX_LOGO_BYTES:
+        return jsonify({"error": "Image must be under 2 MB."}), 400
+
+    ext = content_type.split("/")[-1].replace("jpeg", "jpg")
+    r2_key = f"site/logo.{ext}"
+
+    try:
+        url = upload_asset(config, file, r2_key, content_type)
+    except Exception as e:
+        return jsonify({"error": f"Upload failed: {str(e)}"}), 500
+
+    with global_db(config) as db:
+        db.execute(
+            "INSERT INTO app_settings (key, value) VALUES ('site_logo_url', ?) "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            (url,)
+        )
+    return jsonify({"ok": True, "logo_url": url})
+
+
+@admin_bp.route("/settings/logo/remove", methods=["POST"])
+@admin_required
+def remove_site_logo():
+    config = current_app.config
+    for ext in ("jpg", "png", "webp", "gif"):
+        delete_asset(config, f"site/logo.{ext}")
+    with global_db(config) as db:
+        db.execute("DELETE FROM app_settings WHERE key='site_logo_url'")
+    return jsonify({"ok": True})
 
 
 @admin_bp.route("/broadcast", methods=["POST"])

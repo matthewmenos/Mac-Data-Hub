@@ -46,6 +46,7 @@ def create_app():
             "nav_pending_withdrawals": 0,
             "announcement_text": "",
             "announcement_type": "info",
+            "site_logo_url": "",
         }
         role = session.get("role")
         try:
@@ -63,6 +64,11 @@ def create_app():
                 ).fetchone()
                 ctx["announcement_text"] = ann_text["value"] if ann_text else ""
                 ctx["announcement_type"] = ann_type["value"] if ann_type else "info"
+
+                logo_row = db.execute(
+                    "SELECT value FROM app_settings WHERE key='site_logo_url'"
+                ).fetchone()
+                ctx["site_logo_url"] = logo_row["value"] if logo_row else ""
 
                 if role == "admin" and request.path.startswith("/admin"):
                     ctx["nav_pending_orders"] = db.execute(

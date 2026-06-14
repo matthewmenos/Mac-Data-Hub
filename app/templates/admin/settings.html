@@ -19,6 +19,42 @@
     </div>
 
     <div class="dash-content">
+      <!-- Site Logo (outside main settings form — uploaded separately) -->
+      <div class="settings-section">
+        <h2>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:.4rem;vertical-align:middle"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Site Logo
+        </h2>
+        <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:1.25rem">Replaces the "M" letter mark in the header and footer across the entire site.</p>
+        <div class="logo-upload-area">
+          <div class="logo-preview-wrap">
+            {% if settings.get('site_logo_url') %}
+              <img id="site-logo-preview" src="{{ settings['site_logo_url'] }}" alt="Site logo" class="logo-preview-img" />
+            {% else %}
+              <div id="site-logo-placeholder" class="logo-preview-placeholder">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              </div>
+              <img id="site-logo-preview" src="" alt="Site logo" class="logo-preview-img hidden" />
+            {% endif %}
+          </div>
+          <div class="logo-upload-controls">
+            <label for="site-logo-input" class="btn btn-ghost btn-sm logo-file-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Choose image
+            </label>
+            <input type="file" id="site-logo-input" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" />
+            <span class="field-hint" style="margin-top:.4rem;">JPEG, PNG, WebP or GIF · Max 2 MB</span>
+            <div id="site-logo-error"   class="form-error hidden"   style="margin-top:.5rem;"></div>
+            <div id="site-logo-success" class="form-success hidden" style="margin-top:.5rem;"></div>
+            {% if settings.get('site_logo_url') %}
+            <button type="button" id="site-logo-remove" class="btn btn-ghost btn-sm" style="color:var(--red);margin-top:.5rem;">
+              Remove logo
+            </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
       <form id="settings-form" novalidate>
 
         <!-- General -->
@@ -240,6 +276,82 @@
 {% block scripts %}
 <script src="/static/js/admin_settings.js"></script>
 <script>
+/* ── Site logo upload ──────────────────────────────────── */
+(function () {
+  var fileInput   = document.getElementById('site-logo-input');
+  var preview     = document.getElementById('site-logo-preview');
+  var placeholder = document.getElementById('site-logo-placeholder');
+  var logoErr     = document.getElementById('site-logo-error');
+  var logoOk      = document.getElementById('site-logo-success');
+  var removeBtn   = document.getElementById('site-logo-remove');
+
+  fileInput.addEventListener('change', async function () {
+    var file = this.files[0];
+    if (!file) return;
+    logoErr.classList.add('hidden');
+    logoOk.classList.add('hidden');
+
+    if (file.size > 2 * 1024 * 1024) {
+      logoErr.textContent = 'Image must be under 2 MB.';
+      logoErr.classList.remove('hidden');
+      this.value = '';
+      return;
+    }
+
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      preview.src = ev.target.result;
+      preview.classList.remove('hidden');
+      if (placeholder) placeholder.classList.add('hidden');
+    };
+    reader.readAsDataURL(file);
+
+    var fd = new FormData();
+    fd.append('logo', file);
+    try {
+      var resp = await fetch('/admin/settings/logo', { method: 'POST', body: fd });
+      var data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Upload failed.');
+      logoOk.textContent = 'Site logo updated.';
+      logoOk.classList.remove('hidden');
+      if (!removeBtn) {
+        var btn = document.createElement('button');
+        btn.type = 'button'; btn.id = 'site-logo-remove';
+        btn.className = 'btn btn-ghost btn-sm';
+        btn.style.cssText = 'color:var(--red);margin-top:.5rem;';
+        btn.textContent = 'Remove logo';
+        btn.addEventListener('click', removeLogo);
+        logoOk.after(btn);
+        removeBtn = btn;
+      }
+    } catch (err) {
+      logoErr.textContent = err.message;
+      logoErr.classList.remove('hidden');
+    }
+  });
+
+  async function removeLogo() {
+    logoErr.classList.add('hidden');
+    logoOk.classList.add('hidden');
+    try {
+      var resp = await fetch('/admin/settings/logo/remove', { method: 'POST' });
+      var data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Failed to remove logo.');
+      preview.src = '';
+      preview.classList.add('hidden');
+      if (placeholder) placeholder.classList.remove('hidden');
+      if (removeBtn) { removeBtn.remove(); removeBtn = null; }
+      logoOk.textContent = 'Logo removed.';
+      logoOk.classList.remove('hidden');
+    } catch (err) {
+      logoErr.textContent = err.message;
+      logoErr.classList.remove('hidden');
+    }
+  }
+
+  if (removeBtn) removeBtn.addEventListener('click', removeLogo);
+})();
+
 function togglePw(id, btn) {
   var inp = document.getElementById(id);
   var show = inp.type === 'password';

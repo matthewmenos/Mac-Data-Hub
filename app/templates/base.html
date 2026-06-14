@@ -27,7 +27,11 @@
   <header class="site-header">
     <div class="container header-inner">
       <a href="/" class="logo">
-        <div class="logo-mark">M</div>
+        {% if site_logo_url %}
+          <img src="{{ site_logo_url }}" alt="Mac Data Hub" class="site-logo-img" />
+        {% else %}
+          <div class="logo-mark">M</div>
+        {% endif %}
         <span class="logo-text">Mac Data Hub</span>
       </a>
 
@@ -103,7 +107,11 @@
   <footer class="site-footer pwa-hide">
     <div class="container footer-inner">
       <div class="footer-brand">
-        <div class="logo-mark logo-mark-sm">M</div>
+        {% if site_logo_url %}
+          <img src="{{ site_logo_url }}" alt="Mac Data Hub" class="site-logo-img site-logo-img-sm" />
+        {% else %}
+          <div class="logo-mark logo-mark-sm">M</div>
+        {% endif %}
         <div>
           <div class="footer-name">Mac Data Hub</div>
           <div class="footer-tagline">Affordable data for every Ghanaian number.</div>
