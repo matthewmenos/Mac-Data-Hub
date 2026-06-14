@@ -581,6 +581,77 @@
   .notif-dropdown     { width: calc(100vw - 2rem); right: -4rem; }
 }
 
+/* ── Pricing table — responsive cards on mobile ──────────── */
+@media (max-width: 640px) {
+  /* Hide table header — labels move inline */
+  .pricing-table-wrap thead { display: none; }
+
+  .pricing-table-wrap .data-table,
+  .pricing-table-wrap tbody,
+  .pricing-table-wrap tr { display: block; width: 100%; }
+
+  .pricing-table-wrap tr {
+    padding: .9rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .35rem .75rem;
+    align-items: center;
+  }
+  .pricing-table-wrap tbody tr:last-child { border-bottom: none; }
+  .pricing-table-wrap tbody tr:hover { background: var(--bg); }
+
+  .pricing-table-wrap td {
+    padding: 0;
+    border: none;
+    font-size: .83rem;
+  }
+
+  /* Bundle name spans full width */
+  .pricing-table-wrap td:first-child { grid-column: 1 / -1; }
+
+  /* Data labels via pseudo-elements */
+  .pricing-table-wrap td:nth-child(2)::before { content: 'Validity: '; font-weight: 600; color: var(--text-muted); }
+  .pricing-table-wrap td:nth-child(3)::before { content: 'Base: ';     font-weight: 600; color: var(--text-muted); }
+  .pricing-table-wrap td:nth-child(4)::before { content: 'Your price '; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: .25rem; }
+  .pricing-table-wrap td:nth-child(5)::before { content: 'Profit: ';   font-weight: 600; color: var(--text-muted); }
+
+  /* Price input full width inside its cell */
+  .pricing-table-wrap .price-input { width: 100%; }
+
+  /* Profit cell spans full width on last row */
+  .pricing-table-wrap td:nth-child(5) { grid-column: 1 / -1; }
+
+  .pricing-info-bar { font-size: .8rem; }
+}
+
+/* ── Admin / dashboard modal — responsive ────────────────── */
+@media (max-width: 600px) {
+  .admin-modal-card {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 1.25rem 1rem 1.5rem;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 92vh;
+  }
+  .admin-modal {
+    align-items: flex-end;
+  }
+  /* slide up from bottom */
+  @keyframes modalIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .modal-actions { flex-direction: column-reverse; }
+  .modal-actions .btn { width: 100%; justify-content: center; }
+  .form-row { flex-direction: column; gap: 0; }
+}
+
 /* ── Logo upload UI ──────────────────────────────────────── */
 .logo-upload-area {
   display: flex; align-items: flex-start; gap: 1.25rem; flex-wrap: wrap;
