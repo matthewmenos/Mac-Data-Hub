@@ -652,6 +652,162 @@
   .form-row { flex-direction: column; gap: 0; }
 }
 
+/* ══════════════════════════════════════════════════════════
+   Mobile-responsive tables — card layout at ≤640px
+   Each .tbl-wrap scopes the rules to that specific table.
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+
+  /* ── Shared card-table base ── */
+  .tbl-wrap thead { display: none; }
+  .tbl-wrap .data-table,
+  .tbl-wrap tbody  { display: block; width: 100%; }
+  .tbl-wrap tr {
+    display: grid; width: 100%;
+    padding: .85rem 1rem; border-bottom: 1px solid var(--border);
+    gap: .3rem .75rem;
+  }
+  .tbl-wrap tbody tr:last-child { border-bottom: none; }
+  .tbl-wrap tbody tr:hover { background: var(--bg); }
+  .tbl-wrap td {
+    padding: 0; border: none; font-size: .83rem;
+    display: flex; align-items: center; gap: .4rem;
+  }
+  .tbl-wrap td::before {
+    font-size: .68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .04em; color: var(--text-muted); white-space: nowrap; flex-shrink: 0;
+  }
+  /* action cells: no label, wrap buttons */
+  .tbl-wrap .td-actions { flex-wrap: wrap; gap: .4rem; }
+  .tbl-wrap .td-actions::before { display: none; }
+
+  /* ── Admin: Orders  (9 cols → card) ── */
+  /* Reference | Customer | Network | Bundle | Store | Amount | Profit | Status | Date */
+  .tbl-admin-orders tr { grid-template-columns: 1fr 1fr; }
+  .tbl-admin-orders td:nth-child(1) { grid-column: 1/-1; }                       /* Reference */
+  .tbl-admin-orders td:nth-child(1)::before { content: 'REF '; }
+  .tbl-admin-orders td:nth-child(2) { grid-column: 1/-1; }                       /* Customer */
+  .tbl-admin-orders td:nth-child(2)::before { content: ''; }
+  .tbl-admin-orders td:nth-child(3)::before { content: 'NETWORK '; }
+  .tbl-admin-orders td:nth-child(4)::before { content: 'BUNDLE '; }
+  .tbl-admin-orders td:nth-child(5)::before { content: 'STORE '; }
+  .tbl-admin-orders td:nth-child(6)::before { content: 'AMOUNT '; }
+  .tbl-admin-orders td:nth-child(7)::before { content: 'PROFIT '; }
+  .tbl-admin-orders td:nth-child(8) { grid-column: 1/-1; }                       /* Status */
+  .tbl-admin-orders td:nth-child(8)::before { content: ''; }
+  .tbl-admin-orders td:nth-child(9)::before { content: 'DATE '; }
+
+  /* ── Admin: Resellers  (7 cols → card) ── */
+  /* Reseller | Store | Wallet | Orders | Status | Joined | Action */
+  .tbl-admin-resellers tr { grid-template-columns: 1fr 1fr; }
+  .tbl-admin-resellers td:nth-child(1) { grid-column: 1/-1; }                    /* Reseller */
+  .tbl-admin-resellers td:nth-child(1)::before { content: ''; }
+  .tbl-admin-resellers td:nth-child(2) { grid-column: 1/-1; }                    /* Store */
+  .tbl-admin-resellers td:nth-child(2)::before { content: ''; }
+  .tbl-admin-resellers td:nth-child(3)::before { content: 'WALLET '; }
+  .tbl-admin-resellers td:nth-child(4)::before { content: 'ORDERS '; }
+  .tbl-admin-resellers td:nth-child(5)::before { content: ''; }                  /* Status pill */
+  .tbl-admin-resellers td:nth-child(6)::before { content: 'JOINED '; }
+  .tbl-admin-resellers td:nth-child(7) { grid-column: 1/-1; }                    /* Action */
+  .tbl-admin-resellers td:nth-child(7)::before { display: none; }
+
+  /* ── Admin: Withdrawals  (7 cols → card) ── */
+  /* Reseller | Amount | Mobile | Network | Status | Requested | Actions */
+  .tbl-admin-withdrawals tr { grid-template-columns: 1fr 1fr; }
+  .tbl-admin-withdrawals td:nth-child(1) { grid-column: 1/-1; }                  /* Reseller */
+  .tbl-admin-withdrawals td:nth-child(1)::before { content: ''; }
+  .tbl-admin-withdrawals td:nth-child(2)::before { content: 'AMOUNT '; }
+  .tbl-admin-withdrawals td:nth-child(3)::before { content: 'MOBILE '; }
+  .tbl-admin-withdrawals td:nth-child(4)::before { content: 'NETWORK '; }
+  .tbl-admin-withdrawals td:nth-child(5)::before { content: ''; }                /* Status */
+  .tbl-admin-withdrawals td:nth-child(6)::before { content: 'DATE '; }
+  .tbl-admin-withdrawals td:nth-child(7) { grid-column: 1/-1; }                  /* Actions */
+
+  /* ── Admin: Bundles  (9 cols → card) ── */
+  /* Label | Network | Volume | Validity | Base | Guest | Slug | Status | Actions */
+  .tbl-admin-bundles tr { grid-template-columns: 1fr 1fr; }
+  .tbl-admin-bundles td:nth-child(1) { grid-column: 1/-1; }                      /* Label */
+  .tbl-admin-bundles td:nth-child(1)::before { content: ''; }
+  .tbl-admin-bundles td:nth-child(2)::before { content: 'NETWORK '; }
+  .tbl-admin-bundles td:nth-child(3)::before { content: 'SIZE '; }
+  .tbl-admin-bundles td:nth-child(4)::before { content: 'VALIDITY '; }
+  .tbl-admin-bundles td:nth-child(5)::before { content: 'BASE '; }
+  .tbl-admin-bundles td:nth-child(6)::before { content: 'GUEST '; }
+  .tbl-admin-bundles td:nth-child(7) { grid-column: 1/-1; }                      /* Slug */
+  .tbl-admin-bundles td:nth-child(7)::before { content: 'SLUG '; align-self: center; }
+  .tbl-admin-bundles td:nth-child(8)::before { content: ''; }                    /* Status */
+  .tbl-admin-bundles td:nth-child(9) { grid-column: 1/-1; }                      /* Actions */
+
+  /* ── Reseller: Orders  (7 cols → card) ── */
+  /* Bundle | Network | Customer | Amount | Profit | Status | Date */
+  .tbl-reseller-orders tr { grid-template-columns: 1fr 1fr; }
+  .tbl-reseller-orders td:nth-child(1) { grid-column: 1/-1; }                    /* Bundle */
+  .tbl-reseller-orders td:nth-child(1)::before { content: ''; }
+  .tbl-reseller-orders td:nth-child(2)::before { content: ''; }                  /* Network badge */
+  .tbl-reseller-orders td:nth-child(3)::before { content: 'CUSTOMER '; }
+  .tbl-reseller-orders td:nth-child(4)::before { content: 'AMOUNT '; }
+  .tbl-reseller-orders td:nth-child(5)::before { content: 'PROFIT '; }
+  .tbl-reseller-orders td:nth-child(6)::before { content: ''; }                  /* Status */
+  .tbl-reseller-orders td:nth-child(7)::before { content: 'DATE '; }
+
+  /* ── Reseller: Wallet history  (5 cols → card) ── */
+  /* Amount | Mobile | Network | Status | Date */
+  .tbl-reseller-wallet tr { grid-template-columns: 1fr 1fr; }
+  .tbl-reseller-wallet td:nth-child(1)::before { content: 'AMOUNT '; }
+  .tbl-reseller-wallet td:nth-child(2)::before { content: 'MOBILE '; }
+  .tbl-reseller-wallet td:nth-child(3)::before { content: ''; }                  /* Network badge */
+  .tbl-reseller-wallet td:nth-child(4)::before { content: ''; }                  /* Status */
+  .tbl-reseller-wallet td:nth-child(5)::before { content: 'DATE '; }
+
+  /* ── Filter bar ── */
+  .filter-bar { flex-direction: column; gap: .5rem; }
+  .search-wrap { min-width: 0; width: 100%; }
+  .filter-select { width: 100%; }
+
+  /* ── Count pills ── */
+  .count-pills { gap: .5rem; }
+  .count-pill  { min-width: 0; flex: 1; padding: .5rem .6rem; }
+  .count-pill-num   { font-size: 1.1rem; }
+  .count-pill-label { font-size: .58rem; }
+
+  /* ── Stat grid ── */
+  .stat-grid { grid-template-columns: 1fr 1fr; gap: .75rem; }
+  .stat-card { padding: 1rem; }
+  .stat-card-value { font-size: 1.35rem; }
+
+  /* ── Wallet form 3-col → stack ── */
+  .wallet-form-row { flex-direction: column; gap: 0; }
+
+  /* ── Dash content padding ── */
+  .dash-content { padding: .875rem; }
+
+  /* ── Settings grid ── */
+  .settings-section { padding: 1rem; }
+  .settings-grid { grid-template-columns: 1fr; }
+
+  /* ── Panel ── */
+  .panel-header { padding: .75rem 1rem; }
+  .panel-body   { padding: 1rem; }
+
+  /* ── Two-col ── */
+  .dash-two-col { gap: .875rem; }
+
+  /* ── Net revenue grid ── */
+  .net-revenue-grid { gap: .5rem; }
+  .net-rev-card { min-width: calc(50% - .25rem); padding: .75rem 1rem; }
+
+  /* ── Quick actions ── */
+  .quick-actions-grid { grid-template-columns: 1fr 1fr; gap: .75rem; }
+  .qa-card { padding: 1rem .875rem; }
+}
+
+@media (max-width: 400px) {
+  .stat-grid { grid-template-columns: 1fr; }
+  .net-rev-card { min-width: 100%; }
+  .quick-actions-grid { grid-template-columns: 1fr; }
+  .count-pill-num { font-size: 1rem; }
+}
+
 /* ── Logo upload UI ──────────────────────────────────────── */
 .logo-upload-area {
   display: flex; align-items: flex-start; gap: 1.25rem; flex-wrap: wrap;

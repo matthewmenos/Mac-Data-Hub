@@ -37,7 +37,7 @@
         <div class="panel-body">
           <p class="td-muted" style="font-size:.85rem;margin-bottom:1.25rem">Funds are sent to your mobile money account. Minimum withdrawal: GHS {{ '%.2f'|format(min_withdrawal / 100) }}.</p>
           <form id="withdraw-form" novalidate>
-            <div class="form-row">
+            <div class="form-row wallet-form-row">
               <div class="field">
                 <label for="amount">Amount (GHS)</label>
                 <div class="input-with-icon">
@@ -84,7 +84,7 @@
 
       {% if withdrawals %}
       <div class="panel">
-        <div class="panel-body no-pad">
+        <div class="panel-body no-pad tbl-wrap tbl-reseller-wallet">
           <table class="data-table">
             <thead>
               <tr>
