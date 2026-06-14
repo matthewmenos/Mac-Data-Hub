@@ -36,11 +36,12 @@ def storefront(slug):
         if not store:
             return render_template("public/404.html"), 404
         pricing = db.execute(
-            """SELECT sp.price_pesewas, db.id as bundle_id, db.label, db.network,
+            """SELECT COALESCE(sp.price_pesewas, db.base_price_pesewas) AS price_pesewas,
+                      db.id as bundle_id, db.label, db.network,
                       db.volume_mb, db.validity_days, db.offer_slug
-               FROM store_pricing sp
-               JOIN data_bundles db ON db.id = sp.bundle_id
-               WHERE sp.store_id=? AND db.is_active=1
+               FROM data_bundles db
+               LEFT JOIN store_pricing sp ON sp.bundle_id = db.id AND sp.store_id=?
+               WHERE db.is_active=1
                ORDER BY db.network, db.volume_mb""",
             (store["id"],)
         ).fetchall()
@@ -66,10 +67,8 @@ def checkout():
             return redirect(url_for("public.home"))
         if price_row:
             price = price_row["price_pesewas"]
-        elif store:
-            price = bundle["base_price_pesewas"]
         else:
-            price = bundle["guest_price_pesewas"] or bundle["base_price_pesewas"]
+            price = bundle["base_price_pesewas"] if store else (bundle["guest_price_pesewas"] or bundle["base_price_pesewas"])
         return render_template("public/checkout.html", bundle=bundle, store=store, price=price)
 
     # POST: initiate Paystack payment

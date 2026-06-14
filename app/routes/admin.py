@@ -280,10 +280,23 @@ def withdrawals():
             return render_template("admin/withdrawals.html", withdrawals=all_wd, counts=counts)
 
         data = request.get_json()
+        new_status = data["status"]
+        wd = db.execute(
+            "SELECT user_id, amount_pesewas, status FROM wallet_withdrawals WHERE id=?",
+            (data["id"],)
+        ).fetchone()
+        if not wd:
+            return jsonify({"ok": False, "error": "Withdrawal not found."}), 404
         db.execute(
             "UPDATE wallet_withdrawals SET status=? WHERE id=?",
-            (data["status"], data["id"])
+            (new_status, data["id"])
         )
+        # Refund balance if marking failed (only from pending/processing)
+        if new_status == "failed" and wd["status"] in ("pending", "processing"):
+            db.execute(
+                "UPDATE users SET wallet_pesewas = wallet_pesewas + ? WHERE id=?",
+                (wd["amount_pesewas"], wd["user_id"])
+            )
         return jsonify({"ok": True})
 
 

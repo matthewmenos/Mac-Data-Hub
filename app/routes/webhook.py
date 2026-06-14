@@ -82,15 +82,16 @@ def _handle_order(config, reference: str, metadata: dict):
         )
 
         # Credit reseller wallet and mirror to their personal DB
-        if status == "dispatched" and order["store_id"] and order["profit_pesewas"] > 0:
+        if status == "dispatched" and order["store_id"]:
             store = db.execute(
                 "SELECT user_id FROM stores WHERE id=?", (order["store_id"],)
             ).fetchone()
             if store:
-                db.execute(
-                    "UPDATE users SET wallet_pesewas = wallet_pesewas + ? WHERE id=?",
-                    (order["profit_pesewas"], store["user_id"])
-                )
+                if order["profit_pesewas"] > 0:
+                    db.execute(
+                        "UPDATE users SET wallet_pesewas = wallet_pesewas + ? WHERE id=?",
+                        (order["profit_pesewas"], store["user_id"])
+                    )
                 bundle_row = db.execute(
                     "SELECT label FROM data_bundles WHERE id=?", (order["bundle_id"],)
                 ).fetchone()

@@ -60,10 +60,7 @@ def notifications():
     with user_db(config, uid) as udb:
         recent_orders = udb.execute(
             "SELECT id, bundle_label, network, profit_pesewas, status, created_at "
-            "FROM orders ORDER BY created_at DESC LIMIT 6"
-        ).fetchall()
-        recent_earnings = udb.execute(
-            "SELECT amount_pesewas, created_at FROM earnings ORDER BY created_at DESC LIMIT 4"
+            "FROM orders ORDER BY created_at DESC LIMIT 8"
         ).fetchall()
         unread_count = udb.execute(
             "SELECT COUNT(*) as c FROM orders "
@@ -79,15 +76,6 @@ def notifications():
             "msg": f"<strong>{o['bundle_label']}</strong> order — +{profit} profit",
             "time": o["created_at"][:16].replace("T", " "),
             "url": "/dashboard/orders",
-        })
-    for e in recent_earnings:
-        amt = "GHS %.2f" % (e["amount_pesewas"] / 100)
-        items.append({
-            "type": "earning",
-            "icon": "green",
-            "msg": f"Wallet credited <strong>+{amt}</strong>",
-            "time": e["created_at"][:16].replace("T", " "),
-            "url": "/dashboard/wallet",
         })
 
     return jsonify({"items": items, "unread": unread_count})
@@ -201,11 +189,13 @@ def withdraw():
         if amount_pesewas > user["wallet_pesewas"]:
             return jsonify({"error": "Insufficient wallet balance."}), 400
 
+        # Insert first — if this fails, balance is untouched
         db.execute(
             """INSERT INTO wallet_withdrawals (id, user_id, amount_pesewas, mobile_number, network, status)
                VALUES (?,?,?,?,?,'pending')""",
             (str(uuid.uuid4()), uid, amount_pesewas, mobile, network)
         )
+        # Deduct only after successful insert
         db.execute(
             "UPDATE users SET wallet_pesewas = wallet_pesewas - ? WHERE id=?",
             (amount_pesewas, uid)
