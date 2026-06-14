@@ -24,8 +24,15 @@ def _headers(api_key: str) -> dict:
 def get_offers(api_key: str) -> list:
     resp = requests.get(f"{_base()}/offers",
                         headers=_headers(api_key), timeout=15)
-    resp.raise_for_status()
-    return resp.json()
+    if not resp.ok:
+        raise ValueError(f"GigzHub returned HTTP {resp.status_code}: {resp.text[:200]}")
+    try:
+        return resp.json()
+    except Exception:
+        raise ValueError(
+            f"GigzHub returned non-JSON (HTTP {resp.status_code}). "
+            f"Response: {resp.text[:200] or '(empty)'}"
+        )
 
 
 def dispatch_bundle(api_key: str, network: str, phone: str,
