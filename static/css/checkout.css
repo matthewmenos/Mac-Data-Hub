@@ -8,14 +8,26 @@
 }
 
 .checkout-card {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,.42);
+  backdrop-filter: blur(36px) saturate(2.1) brightness(1.05);
+  -webkit-backdrop-filter: blur(36px) saturate(2.1) brightness(1.05);
+  border: 1px solid rgba(255,255,255,.68);
   border-radius: var(--radius); padding: 2rem;
-  box-shadow: var(--glass-shadow);
+  box-shadow: 0 12px 48px rgba(0,0,0,.09), inset 0 1px 0 rgba(255,255,255,.85);
   animation: cardIn .3s var(--spring);
+  position: relative; overflow: hidden;
 }
+.checkout-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 40%;
+  background: linear-gradient(180deg, rgba(255,255,255,.22) 0%, transparent 100%);
+  pointer-events: none;
+}
+[data-theme="dark"] .checkout-card {
+  background: rgba(8,14,32,.62);
+  border-color: rgba(255,255,255,.1);
+  box-shadow: 0 12px 48px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
+}
+[data-theme="dark"] .checkout-card::before { display: none; }
 @keyframes cardIn {
   from { opacity: 0; transform: translateY(10px) scale(.99); }
   to   { opacity: 1; transform: none; }
@@ -32,13 +44,18 @@
 .checkout-sub       { font-size: .85rem; color: var(--text-muted); }
 
 .order-summary-card {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,.38);
+  backdrop-filter: blur(32px) saturate(2) brightness(1.04);
+  -webkit-backdrop-filter: blur(32px) saturate(2) brightness(1.04);
+  border: 1px solid rgba(255,255,255,.65);
   border-radius: var(--radius); padding: 1.5rem;
-  box-shadow: var(--glass-shadow);
+  box-shadow: 0 8px 36px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.8);
   position: sticky; top: 80px;
+}
+[data-theme="dark"] .order-summary-card {
+  background: rgba(8,14,32,.58);
+  border-color: rgba(255,255,255,.1);
+  box-shadow: 0 8px 36px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05);
 }
 .osc-title   { font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); margin-bottom: 1.25rem; }
 .osc-bundle  { margin-bottom: 1.25rem; }

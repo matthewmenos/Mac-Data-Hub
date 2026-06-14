@@ -15,6 +15,10 @@
         <span class="topbar-title">Data Bundles</span>
         <span class="topbar-subtitle">{{ counts.total }} total &middot; {{ counts.active }} active</span>
       </div>
+      <button class="btn btn-ghost btn-sm" id="refresh-gigzhub-btn" title="Load live GigzHub prices" style="flex-shrink:0">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="refresh-icon"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        GigzHub Prices
+      </button>
       <button class="btn btn-primary" id="add-bundle-btn" style="flex-shrink:0">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Add Bundle
@@ -23,6 +27,31 @@
     </div>
 
     <div class="dash-content">
+
+      <!-- GigzHub live prices panel (hidden until loaded) -->
+      <div class="panel hidden" id="gigzhub-panel" style="margin-bottom:1.5rem">
+        <div class="panel-header">
+          <span class="panel-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:.35rem;vertical-align:middle"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Live GigzHub Base Prices
+          </span>
+          <span id="gigzhub-fetched-at" style="font-size:.73rem;color:var(--text-muted)"></span>
+        </div>
+        <div class="panel-body no-pad">
+          <table class="data-table" id="gigzhub-table">
+            <thead>
+              <tr>
+                <th>Offer Slug</th>
+                <th>GigzHub Price</th>
+                <th>Your Base Price</th>
+                <th>Margin</th>
+              </tr>
+            </thead>
+            <tbody id="gigzhub-tbody"></tbody>
+          </table>
+          <div id="gigzhub-error" class="form-error hidden" style="margin:1rem"></div>
+        </div>
+      </div>
 
       <!-- Filter bar -->
       <div class="filter-bar">
@@ -62,7 +91,7 @@
             </thead>
             <tbody>
               {% for b in bundles %}
-              <tr data-id="{{ b['id'] }}" data-net="{{ b['network'] }}" data-status="{{ 'active' if b['is_active'] else 'inactive' }}">
+              <tr data-id="{{ b['id'] }}" data-net="{{ b['network'] }}" data-status="{{ 'active' if b['is_active'] else 'inactive' }}" data-slug="{{ b['offer_slug'] }}" data-base="{{ b['base_price_pesewas'] }}">
                 <td class="td-bold">{{ b['label'] }}</td>
                 <td><span class="net-badge net-{{ b['network'] }}">{{ b['network']|upper }}</span></td>
                 <td>{% if b['volume_mb'] >= 1000 %}{{ '%.1f'|format(b['volume_mb'] / 1000) }}GB{% else %}{{ b['volume_mb'] }}MB{% endif %}</td>
@@ -203,5 +232,88 @@
   searchEl?.addEventListener('input', applyFilters);
   netSel?.addEventListener('change', applyFilters);
   statusSel?.addEventListener('change', applyFilters);
+
+  // ── GigzHub live prices ──────────────────────────────────
+  // Build slug→base map from bundles table rows
+  function buildLocalMap() {
+    const map = {};
+    document.querySelectorAll('#bundles-table tbody tr[data-slug]').forEach(tr => {
+      map[tr.dataset.slug] = parseInt(tr.dataset.base, 10) || 0;
+    });
+    return map;
+  }
+
+  function fmt(pesewas) {
+    return 'GHS ' + (pesewas / 100).toFixed(2);
+  }
+
+  function marginPill(gigPesewas, ourPesewas) {
+    if (!gigPesewas) return '<span class="td-muted">—</span>';
+    const diff = ourPesewas - gigPesewas;
+    const pct  = gigPesewas ? ((diff / gigPesewas) * 100).toFixed(1) : 0;
+    const cls  = diff > 0 ? 'status-dispatched' : diff < 0 ? 'status-failed' : 'status-pending';
+    const sign = diff >= 0 ? '+' : '';
+    return `<span class="status-pill ${cls}">${sign}${fmt(diff)} (${sign}${pct}%)</span>`;
+  }
+
+  document.getElementById('refresh-gigzhub-btn').addEventListener('click', async function () {
+    const icon    = document.getElementById('refresh-icon');
+    const panel   = document.getElementById('gigzhub-panel');
+    const tbody   = document.getElementById('gigzhub-tbody');
+    const errEl   = document.getElementById('gigzhub-error');
+    const fetchedEl = document.getElementById('gigzhub-fetched-at');
+
+    icon.style.animation = 'spin .7s linear infinite';
+    this.disabled = true;
+    errEl.classList.add('hidden');
+
+    try {
+      const res  = await fetch('/admin/bundles/gigzhub-prices');
+      const data = await res.json();
+
+      if (!data.ok) {
+        errEl.textContent = data.error || 'Failed to fetch GigzHub prices.';
+        errEl.classList.remove('hidden');
+        panel.classList.remove('hidden');
+        return;
+      }
+
+      const localMap = buildLocalMap();
+      const prices   = data.prices; // {slug: pesewas}
+      const slugs    = Object.keys(prices).sort();
+
+      if (!slugs.length) {
+        errEl.textContent = 'GigzHub returned no offers.';
+        errEl.classList.remove('hidden');
+        panel.classList.remove('hidden');
+        return;
+      }
+
+      tbody.innerHTML = slugs.map(slug => {
+        const gig  = prices[slug];
+        const ours = localMap[slug] ?? null;
+        return `<tr>
+          <td><code class="ref-code">${slug}</code></td>
+          <td class="td-bold">${fmt(gig)}</td>
+          <td>${ours !== null ? fmt(ours) : '<span class="td-muted">not in catalog</span>'}</td>
+          <td>${ours !== null ? marginPill(gig, ours) : '<span class="td-muted">—</span>'}</td>
+        </tr>`;
+      }).join('');
+
+      fetchedEl.textContent = 'Fetched at ' + new Date().toLocaleTimeString();
+      panel.classList.remove('hidden');
+
+    } catch (e) {
+      errEl.textContent = 'Network error: ' + e.message;
+      errEl.classList.remove('hidden');
+      panel.classList.remove('hidden');
+    } finally {
+      icon.style.animation = '';
+      this.disabled = false;
+    }
+  });
 </script>
+<style>
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
 {% endblock %}

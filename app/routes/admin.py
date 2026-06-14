@@ -5,6 +5,7 @@ from flask import (Blueprint, render_template, request, redirect,
 from ..services.db import global_db
 from ..services.push import broadcast_push
 from ..services.storage import upload_asset, delete_asset
+from ..services.gigzhub import get_offers
 
 ALLOWED_LOGO_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MAX_LOGO_BYTES = 2 * 1024 * 1024
@@ -178,6 +179,27 @@ def bundles():
         if request.method == "DELETE":
             db.execute("DELETE FROM data_bundles WHERE id=?", (data["id"],))
             return jsonify({"ok": True})
+
+
+@admin_bp.route("/bundles/gigzhub-prices")
+@admin_required
+def gigzhub_prices():
+    config = current_app.config
+    api_key = config.get("GIGZHUB_API_KEY", "")
+    if not api_key:
+        return jsonify({"ok": False, "error": "GigzHub API key not configured."}), 400
+    try:
+        offers = get_offers(api_key)
+        # Normalise to {offer_slug: price_pesewas}
+        prices = {}
+        for o in offers:
+            slug = o.get("offerSlug") or o.get("offer_slug") or o.get("slug") or ""
+            price = o.get("price") or o.get("price_pesewas") or 0
+            if slug:
+                prices[slug] = int(float(price))
+        return jsonify({"ok": True, "prices": prices})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 502
 
 
 @admin_bp.route("/resellers")
