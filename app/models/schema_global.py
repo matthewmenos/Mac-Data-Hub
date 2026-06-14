@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS stores (
     slug        TEXT UNIQUE NOT NULL,
     store_name  TEXT NOT NULL,
     description TEXT,
+    logo_url    TEXT,
     created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

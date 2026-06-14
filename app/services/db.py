@@ -60,6 +60,8 @@ _MIGRATIONS = [
         auth TEXT NOT NULL,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )""",
+    # Store logo URL
+    "ALTER TABLE stores ADD COLUMN logo_url TEXT",
 ]
 
 

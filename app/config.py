@@ -21,12 +21,17 @@ class Config:
     GIGZHUB_API_KEY = os.environ["GIGZHUB_API_KEY"]
     GIGZHUB_BASE_URL = "https://gigzhub.net/api/v1"
 
-    # Cloudflare R2
-    R2_ACCOUNT_ID = os.environ["R2_ACCOUNT_ID"]
-    R2_ACCESS_KEY_ID = os.environ["R2_ACCESS_KEY_ID"]
+    # Cloudflare R2 — private bucket (databases)
+    R2_ACCOUNT_ID        = os.environ["R2_ACCOUNT_ID"]
+    R2_ACCESS_KEY_ID     = os.environ["R2_ACCESS_KEY_ID"]
     R2_SECRET_ACCESS_KEY = os.environ["R2_SECRET_ACCESS_KEY"]
-    R2_BUCKET_NAME = os.environ["R2_BUCKET_NAME"]
-    R2_ENDPOINT_URL = os.environ["R2_ENDPOINT_URL"]
+    R2_BUCKET_NAME       = os.environ["R2_BUCKET_NAME"]
+    R2_ENDPOINT_URL      = os.environ["R2_ENDPOINT_URL"]
+
+    # Cloudflare R2 — public assets bucket (logos, media)
+    # Same API token, same endpoint — only bucket name and public URL differ
+    R2_ASSETS_BUCKET_NAME = os.environ["R2_ASSETS_BUCKET_NAME"]
+    R2_ASSETS_PUBLIC_URL  = os.environ["R2_ASSETS_PUBLIC_URL"]
 
     # App
     APP_URL = os.getenv("APP_URL", "http://localhost:5000")

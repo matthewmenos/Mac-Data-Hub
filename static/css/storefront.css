@@ -16,6 +16,10 @@
 .sf-badge { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; opacity: .7; margin-bottom: .35rem; }
 .sf-info h1 { font-size: clamp(1.15rem, 4vw, 1.5rem); font-weight: 900; color: inherit; letter-spacing: -.02em; }
 .sf-desc    { font-size: .875rem; opacity: .85; margin-top: .35rem; color: inherit; }
+.sf-avatar-img {
+  width: 60px; height: 60px; border-radius: 16px;
+  object-fit: cover; border: 2px solid rgba(255,255,255,.3); flex-shrink: 0;
+}
 
 /* Trust bar (reused on storefront) */
 .trust-bar       { background: var(--white); border-bottom: 1px solid var(--border); }

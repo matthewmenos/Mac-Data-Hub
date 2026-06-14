@@ -3,6 +3,10 @@ from functools import wraps
 from flask import (Blueprint, render_template, request, redirect,
                    url_for, session, current_app, jsonify)
 from ..services.db import global_db, user_db
+from ..services.storage import upload_asset, delete_asset
+
+ALLOWED_LOGO_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+MAX_LOGO_BYTES = 2 * 1024 * 1024  # 2 MB
 
 reseller_bp = Blueprint("reseller", __name__, url_prefix="/dashboard")
 
@@ -235,3 +239,59 @@ def store_settings():
         return jsonify({"ok": True})
 
     return render_template("reseller/store.html", user=user, store=store)
+
+
+@reseller_bp.route("/store/logo", methods=["POST"])
+@reseller_required
+def upload_logo():
+    config = current_app.config
+    uid, user, store = _ctx(config)
+
+    if not store:
+        return jsonify({"error": "Store not found."}), 404
+
+    file = request.files.get("logo")
+    if not file or not file.filename:
+        return jsonify({"error": "No file provided."}), 400
+
+    content_type = file.content_type or ""
+    if content_type not in ALLOWED_LOGO_TYPES:
+        return jsonify({"error": "Only JPEG, PNG, WebP or GIF images are allowed."}), 400
+
+    file.seek(0, 2)
+    size = file.tell()
+    file.seek(0)
+    if size > MAX_LOGO_BYTES:
+        return jsonify({"error": "Image must be under 2 MB."}), 400
+
+    ext = content_type.split("/")[-1].replace("jpeg", "jpg")
+    r2_key = f"logos/{store['id']}.{ext}"
+
+    try:
+        url = upload_asset(config, file, r2_key, content_type)
+    except Exception as e:
+        return jsonify({"error": f"Upload failed: {str(e)}"}), 500
+
+    with global_db(config) as db:
+        db.execute("UPDATE stores SET logo_url=? WHERE id=?", (url, store["id"]))
+
+    return jsonify({"ok": True, "logo_url": url})
+
+
+@reseller_bp.route("/store/logo/remove", methods=["POST"])
+@reseller_required
+def remove_logo():
+    config = current_app.config
+    uid, user, store = _ctx(config)
+
+    if not store:
+        return jsonify({"error": "Store not found."}), 404
+
+    # Best-effort delete from assets bucket for each possible extension
+    for ext in ("jpg", "png", "webp", "gif"):
+        delete_asset(config, f"logos/{store['id']}.{ext}")
+
+    with global_db(config) as db:
+        db.execute("UPDATE stores SET logo_url=NULL WHERE id=?", (store["id"],))
+
+    return jsonify({"ok": True})

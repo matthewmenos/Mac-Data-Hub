@@ -580,3 +580,18 @@
   .wbc-balance        { font-size: 2.1rem; }
   .notif-dropdown     { width: calc(100vw - 2rem); right: -4rem; }
 }
+
+/* ── Logo upload UI ──────────────────────────────────────── */
+.logo-upload-area {
+  display: flex; align-items: flex-start; gap: 1.25rem; flex-wrap: wrap;
+}
+.logo-preview-wrap {
+  width: 80px; height: 80px; border-radius: var(--radius);
+  border: 2px dashed var(--border-mid); overflow: hidden;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  background: var(--bg-2);
+}
+.logo-preview-placeholder { color: var(--text-faint); display: flex; align-items: center; justify-content: center; }
+.logo-preview-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.logo-upload-controls { display: flex; flex-direction: column; align-items: flex-start; }
+.logo-file-label { cursor: pointer; }

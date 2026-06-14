@@ -6,7 +6,11 @@
 
 <section class="storefront-hero">
   <div class="container sf-hero-inner">
+    {% if store['logo_url'] %}
+    <img src="{{ store['logo_url'] }}" alt="{{ store['store_name'] }} logo" class="sf-avatar sf-avatar-img" />
+    {% else %}
     <div class="sf-avatar">{{ store['store_name'][0]|upper }}</div>
+    {% endif %}
     <div class="sf-info">
       <div class="sf-badge">Official Store</div>
       <h1>{{ store['store_name'] }}</h1>
@@ -94,53 +98,6 @@
       </button>
       {% endif %}
     </div>
-  </div>
-</section>
-
-<section class="bundles-section" id="bundles">
-  <div class="container">
-    <div class="section-header">
-      <h2>Available bundles</h2>
-      <p>All bundles are for Ghana numbers only.</p>
-    </div>
-
-    <div class="tab-bar" role="tablist">
-      <button class="tab active" data-net="all" role="tab">All Networks</button>
-      <button class="tab" data-net="mtn" role="tab"><span class="tab-dot mtn-dot"></span> MTN</button>
-      <button class="tab" data-net="telecel" role="tab"><span class="tab-dot telecel-dot"></span> Telecel</button>
-      <button class="tab" data-net="airteltigo" role="tab"><span class="tab-dot airteltigo-dot"></span> AirtelTigo</button>
-    </div>
-
-    {% if pricing %}
-    <div class="bundle-grid" id="bundle-grid">
-      {% for p in pricing %}
-      <div class="bundle-card" data-net="{{ p['network'] }}">
-        <div class="bc-header bc-{{ p['network'] }}">
-          <span class="bc-network">{{ p['network']|upper }}</span>
-          <span class="bc-validity">{{ p['validity_days'] }} day{{ 's' if p['validity_days'] != 1 }}</span>
-        </div>
-        <div class="bc-body">
-          <div class="bc-volume">
-            {% if p['volume_mb'] >= 1000 %}{{ '%.0f'|format(p['volume_mb'] / 1000) }}GB{% else %}{{ p['volume_mb'] }}MB{% endif %}
-          </div>
-          <div class="bc-price">GHS {{ '%.2f'|format(p['price_pesewas'] / 100) }}</div>
-          <button class="btn btn-primary btn-block"
-                  onclick="openOrderModal('{{ p['network'] }}', '{{ p['network']|upper }} Data', '{{ p['bundle_id'] }}')">
-            Buy Now
-          </button>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="empty-bundles">
-      <div class="empty-icon">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      </div>
-      <h3>No bundles set up yet</h3>
-      <p>This store hasn't added any bundles. <a href="/">Browse all bundles instead.</a></p>
-    </div>
-    {% endif %}
   </div>
 </section>
 
