@@ -41,23 +41,26 @@ def create_app():
             "now": datetime.utcnow(),
             "config": app.config,
             "request": request,
+            "whatsapp_channel_url": "",
+            "nav_pending_orders": 0,
+            "nav_pending_withdrawals": 0,
         }
-        # Inject nav badge counts only for admin pages (avoids DB hit on every public page)
-        if session.get("role") == "admin" and request.path.startswith("/admin"):
-            try:
-                with global_db(app.config) as db:
-                    ctx["nav_pending_orders"]      = db.execute(
+        role = session.get("role")
+        try:
+            with global_db(app.config) as db:
+                wa_row = db.execute(
+                    "SELECT value FROM app_settings WHERE key='whatsapp_channel_url'"
+                ).fetchone()
+                ctx["whatsapp_channel_url"] = wa_row["value"] if wa_row else ""
+                if role == "admin" and request.path.startswith("/admin"):
+                    ctx["nav_pending_orders"] = db.execute(
                         "SELECT COUNT(*) as c FROM orders WHERE status='pending'"
                     ).fetchone()["c"]
                     ctx["nav_pending_withdrawals"] = db.execute(
                         "SELECT COUNT(*) as c FROM wallet_withdrawals WHERE status='pending'"
                     ).fetchone()["c"]
-            except Exception:
-                ctx["nav_pending_orders"]      = 0
-                ctx["nav_pending_withdrawals"] = 0
-        else:
-            ctx["nav_pending_orders"]      = 0
-            ctx["nav_pending_withdrawals"] = 0
+        except Exception:
+            pass
         return ctx
 
     @app.errorhandler(404)

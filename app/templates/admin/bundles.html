@@ -15,13 +15,11 @@
         <span class="topbar-title">Data Bundles</span>
         <span class="topbar-subtitle">{{ counts.total }} total &middot; {{ counts.active }} active</span>
       </div>
-      <div class="topbar-actions">
-        <button class="btn btn-primary" id="add-bundle-btn">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add Bundle
-        </button>
-        {% include "partials/topbar_actions.html" %}
-      </div>
+      <button class="btn btn-primary" id="add-bundle-btn" style="flex-shrink:0">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Bundle
+      </button>
+      {% include "partials/topbar_actions.html" %}
     </div>
 
     <div class="dash-content">

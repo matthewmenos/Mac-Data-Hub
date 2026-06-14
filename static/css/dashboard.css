@@ -97,9 +97,9 @@
 /* ── Topbar ──────────────────────────────────────────────── */
 .dash-topbar {
   height: 64px; background: var(--white); border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: .85rem;
-  padding: 0 1.5rem; position: sticky; top: 0; z-index: 200;
-  box-shadow: var(--shadow-sm);
+  display: flex; align-items: center; gap: .6rem;
+  padding: 0 1rem 0 1.25rem; position: sticky; top: 0; z-index: 200;
+  box-shadow: var(--shadow-sm); overflow: hidden;
 }
 .topbar-hamburger {
   display: none; background: none; border: none; color: var(--text);
@@ -107,10 +107,34 @@
   transition: background var(--transition);
 }
 .topbar-hamburger:hover { background: var(--bg-2); }
-.topbar-title-wrap { flex: 1; min-width: 0; }
-.topbar-title    { display: block; font-size: 1rem; font-weight: 800; color: var(--text); letter-spacing: -.01em; line-height: 1.2; }
-.topbar-subtitle { display: block; font-size: .75rem; color: var(--text-muted); }
-.topbar-actions  { display: flex; align-items: center; gap: .6rem; flex-shrink: 0; }
+.topbar-title-wrap {
+  flex: 1; min-width: 0;
+  /* don't let long titles push right-side icons off screen */
+  overflow: hidden;
+}
+.topbar-title {
+  display: block; font-size: 1rem; font-weight: 800; color: var(--text);
+  letter-spacing: -.01em; line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar-subtitle {
+  display: block; font-size: .75rem; color: var(--text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* topbar-actions is now emitted directly by the partial — these rules
+   keep any sibling buttons (Add Bundle, Save prices, etc.) aligned */
+.dash-topbar > .btn,
+.dash-topbar > a.btn { flex-shrink: 0; }
+.topbar-actions {
+  display: flex; align-items: center; gap: .5rem; flex-shrink: 0;
+}
+@media (max-width: 480px) {
+  .dash-topbar { padding: 0 .75rem; gap: .45rem; }
+  /* Hide text labels on small extra buttons in topbar, keep icon-only */
+  .dash-topbar > .btn > svg ~ * { display: none; }
+  .topbar-title    { font-size: .92rem; }
+  .topbar-subtitle { display: none; }
+}
 
 /* ── Notification bell ───────────────────────────────────── */
 .notif-wrap   { position: relative; }

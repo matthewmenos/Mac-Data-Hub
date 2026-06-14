@@ -23,6 +23,18 @@
 .trust-item      { display: flex; align-items: center; gap: .45rem; font-size: .82rem; color: var(--text-2); font-weight: 500; }
 .trust-item svg  { color: var(--green); flex-shrink: 0; }
 
+/* WhatsApp channel bar */
+.whatsapp-bar { background: #f0fdf4; border-bottom: 1px solid #bbf7d0; }
+.whatsapp-bar-inner { display: flex; align-items: center; gap: .75rem; padding: .7rem 0; flex-wrap: wrap; }
+.whatsapp-bar-inner span { flex: 1; font-size: .85rem; color: #166534; font-weight: 500; }
+.btn-whatsapp {
+  background: #25D366; color: #fff; border: none;
+  border-radius: var(--radius-sm); padding: .4rem 1rem;
+  font-size: .82rem; font-weight: 700; white-space: nowrap;
+  transition: background var(--transition);
+}
+.btn-whatsapp:hover { background: #1ebe5a; text-decoration: none; color: #fff; }
+
 /* Order modal (shared with home) */
 .modal          { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; }
 .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.45); }
