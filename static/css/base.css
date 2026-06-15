@@ -563,5 +563,77 @@ body:has(.dash-layout) .main-content { min-height: 100vh; }
   .footer-cols { gap: 1rem; }
 }
 
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Track Order section ─────────────────────────────────── */
+.track-section { padding: 1.5rem 0; }
+.track-card {
+  display: flex; align-items: flex-start; gap: 1.25rem;
+  padding: 1.5rem 1.75rem; border-radius: var(--radius);
+}
+.track-card-icon {
+  flex-shrink: 0; width: 48px; height: 48px; border-radius: 14px;
+  background: rgba(0,107,63,.12); color: var(--green);
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid rgba(0,107,63,.2);
+}
+[data-theme="dark"] .track-card-icon { background: rgba(0,107,63,.18); border-color: rgba(0,107,63,.3); }
+.track-card-body { flex: 1; min-width: 0; }
+.track-card-title { font-size: 1.05rem; font-weight: 800; margin-bottom: .2rem; }
+.track-card-sub   { font-size: .85rem; color: var(--text-muted); margin-bottom: .9rem; }
+.track-input-row  { display: flex; gap: .6rem; }
+.track-input-row input {
+  flex: 1; padding: .65rem 1rem; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); font-size: .95rem; color: var(--text);
+  background: rgba(255,255,255,.35); backdrop-filter: blur(8px);
+  transition: border-color var(--transition);
+}
+.track-input-row input:focus { outline: none; border-color: var(--green); }
+[data-theme="dark"] .track-input-row input {
+  background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.1); color: var(--text);
+}
+
+/* Track modal contents */
+.track-modal-card { max-height: 85vh; display: flex; flex-direction: column; }
+.track-modal-card .order-modal-header,
+.track-modal-card .order-modal-sub { flex-shrink: 0; }
+#track-results { overflow-y: auto; flex: 1; }
+
+.track-order-item {
+  display: flex; align-items: center; gap: .85rem;
+  padding: .85rem 0; border-bottom: 1px solid var(--border);
+}
+.track-order-item:last-child { border-bottom: none; }
+.track-order-net {
+  width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .65rem; font-weight: 900; text-transform: uppercase; letter-spacing: .04em;
+}
+.track-order-net.net-mtn        { background: #fef3c7; color: #92400e; }
+.track-order-net.net-telecel    { background: #dbeafe; color: #1e40af; }
+.track-order-net.net-airteltigo { background: #fce7f3; color: #9d174d; }
+[data-theme="dark"] .track-order-net.net-mtn        { background: rgba(251,191,36,.15); color: #fbbf24; }
+[data-theme="dark"] .track-order-net.net-telecel    { background: rgba(59,130,246,.15); color: #93c5fd; }
+[data-theme="dark"] .track-order-net.net-airteltigo { background: rgba(244,114,182,.15); color: #f9a8d4; }
+.track-order-info  { flex: 1; min-width: 0; }
+.track-order-label { font-weight: 700; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track-order-meta  { font-size: .775rem; color: var(--text-muted); margin-top: .1rem; }
+.track-order-right { flex-shrink: 0; text-align: right; }
+.track-order-amount { font-weight: 800; font-size: .92rem; }
+.track-order-date   { font-size: .72rem; color: var(--text-muted); margin-top: .15rem; }
+
+.track-empty {
+  text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);
+}
+.track-empty svg { display: block; margin: 0 auto .75rem; opacity: .35; }
+
+@media (max-width: 520px) {
+  .track-card          { flex-direction: column; gap: .85rem; padding: 1.1rem; }
+  .track-input-row     { flex-direction: column; }
+  .track-input-row input { width: 100%; }
+  .track-input-row .btn  { width: 100%; justify-content: center; }
+  .track-modal-card    { max-height: 92vh; }
+}
+
 /* ── PWA ─────────────────────────────────────────────────── */
 @media (display-mode: standalone) { .pwa-hide { display: none !important; } }

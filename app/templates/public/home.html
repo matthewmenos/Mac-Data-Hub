@@ -71,6 +71,44 @@
 </div>
 {% endif %}
 
+<!-- Track Order -->
+<section class="track-section">
+  <div class="container">
+    <div class="track-card glass">
+      <div class="track-card-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <div class="track-card-body">
+        <h2 class="track-card-title">Track Your Order</h2>
+        <p class="track-card-sub">Enter the phone number you bought data for to see your order history and status.</p>
+        <form class="track-form" id="track-form" novalidate>
+          <div class="track-input-row">
+            <input type="tel" id="track-phone" placeholder="e.g. 054xxxxxxx" maxlength="10" autocomplete="tel" required />
+            <button type="submit" class="btn btn-primary" id="track-btn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Track
+            </button>
+          </div>
+          <div id="track-error" class="form-error hidden" style="margin-top:.5rem"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Track Results Modal -->
+<div class="modal hidden" id="track-modal" role="dialog" aria-modal="true" aria-labelledby="track-modal-title">
+  <div class="modal-backdrop" id="track-modal-backdrop"></div>
+  <div class="order-modal-card track-modal-card">
+    <div class="order-modal-header">
+      <h2 class="order-modal-title" id="track-modal-title">Order History</h2>
+      <button class="order-modal-close" id="track-modal-close" aria-label="Close">&times;</button>
+    </div>
+    <p class="order-modal-sub" id="track-modal-sub"></p>
+    <div id="track-results"></div>
+  </div>
+</div>
+
 <!-- Reseller CTA -->
 <section class="reseller-cta">
   <div class="container reseller-cta-inner">
@@ -156,6 +194,7 @@
 
 <!-- Bundle data for JS -->
 <script>
+window.TRACK_STORE_ID = null;
 window.BUNDLES = [
   {% for b in bundles %}
   {
@@ -174,4 +213,5 @@ window.PAYSTACK_PUBLIC_KEY = "{{ config['PAYSTACK_PUBLIC_KEY'] }}";
 
 {% block scripts %}
 <script src="/static/js/home.js"></script>
+<script src="/static/js/track.js"></script>
 {% endblock %}

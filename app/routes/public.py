@@ -120,6 +120,38 @@ def checkout():
                     "reference": reference})
 
 
+@public_bp.route("/track")
+def track_orders():
+    phone = request.args.get("phone", "").strip()
+    store_id = request.args.get("store_id", "").strip() or None
+    if not phone:
+        return jsonify({"error": "Phone number is required."}), 400
+    config = current_app.config
+    with global_db(config) as db:
+        if store_id:
+            rows = db.execute(
+                """SELECT o.id, o.network, o.volume_mb, o.amount_pesewas,
+                          o.status, o.created_at, b.label
+                   FROM orders o
+                   LEFT JOIN data_bundles b ON b.id = o.bundle_id
+                   WHERE o.customer_phone=? AND o.store_id=?
+                   ORDER BY o.created_at DESC LIMIT 20""",
+                (phone, store_id)
+            ).fetchall()
+        else:
+            rows = db.execute(
+                """SELECT o.id, o.network, o.volume_mb, o.amount_pesewas,
+                          o.status, o.created_at, b.label
+                   FROM orders o
+                   LEFT JOIN data_bundles b ON b.id = o.bundle_id
+                   WHERE o.customer_phone=?
+                   ORDER BY o.created_at DESC LIMIT 20""",
+                (phone,)
+            ).fetchall()
+    orders = [dict(r) for r in rows]
+    return jsonify({"ok": True, "orders": orders, "phone": phone})
+
+
 @public_bp.route("/checkout/verify")
 def checkout_verify():
     ref = request.args.get("ref", "")
