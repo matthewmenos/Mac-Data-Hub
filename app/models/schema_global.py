@@ -23,7 +23,10 @@ CREATE TABLE IF NOT EXISTS users (
     role          TEXT NOT NULL DEFAULT 'reseller',
     wallet_pesewas INTEGER NOT NULL DEFAULT 0,
     is_active     INTEGER NOT NULL DEFAULT 0, -- 1 after registration fee paid
-    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    payout_recipient_code TEXT,              -- Paystack transfer recipient code
+    momo_network          TEXT,              -- mtn | telecel | airteltigo
+    momo_number           TEXT               -- registered mobile money number
 );
 
 -- Reseller storefronts

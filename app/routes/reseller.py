@@ -4,6 +4,9 @@ from flask import (Blueprint, render_template, request, redirect,
                    url_for, session, current_app, jsonify)
 from ..services.db import global_db, user_db
 from ..services.storage import upload_asset, delete_asset
+from ..services.paystack import create_transfer_recipient, initiate_transfer
+
+MOMO_BANK_CODES = {"mtn": "MTN", "telecel": "VDF", "airteltigo": "ATL"}
 
 ALLOWED_LOGO_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MAX_LOGO_BYTES = 2 * 1024 * 1024  # 2 MB
@@ -168,20 +171,54 @@ def wallet():
                            min_withdrawal=min_withdrawal)
 
 
+@reseller_bp.route("/wallet/setup-payout", methods=["POST"])
+@reseller_required
+def setup_payout():
+    """Save a permanent Paystack mobile-money recipient for this reseller."""
+    config = current_app.config
+    uid = session["user_id"]
+    data = request.get_json() or {}
+
+    phone = data.get("phone", "").strip()
+    account_name = data.get("account_name", "").strip()
+    network = data.get("network", "").strip().lower()
+
+    if not phone or not account_name or not network:
+        return jsonify({"error": "Phone, account name, and network are required."}), 400
+    bank_code = MOMO_BANK_CODES.get(network)
+    if not bank_code:
+        return jsonify({"error": "Invalid network. Choose mtn, telecel, or airteltigo."}), 400
+
+    try:
+        result = create_transfer_recipient(
+            config["PAYSTACK_SECRET_KEY"], account_name, phone, bank_code
+        )
+        recipient_code = result["data"]["recipient_code"]
+    except Exception as exc:
+        return jsonify({"error": f"Could not create payout recipient: {exc}"}), 502
+
+    with global_db(config) as db:
+        db.execute(
+            """UPDATE users
+               SET payout_recipient_code=?, momo_network=?, momo_number=?
+               WHERE id=?""",
+            (recipient_code, network, phone, uid)
+        )
+
+    return jsonify({"ok": True, "recipient_code": recipient_code})
+
+
 @reseller_bp.route("/wallet/withdraw", methods=["POST"])
 @reseller_required
 def withdraw():
     config = current_app.config
     uid = session["user_id"]
-    data = request.get_json()
+    data = request.get_json() or {}
 
     try:
         amount_pesewas = round(float(data.get("amount", 0)) * 100)
     except (ValueError, TypeError):
         return jsonify({"error": "Invalid amount."}), 400
-
-    mobile = data.get("mobile_number", "").strip()
-    network = data.get("network", "").strip()
 
     with global_db(config) as db:
         user = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
@@ -190,24 +227,53 @@ def withdraw():
         ).fetchone()
         minimum = int(min_row["value"]) if min_row else 10000
 
+        if not user["payout_recipient_code"]:
+            return jsonify({"error": "Set up your payout profile first before withdrawing."}), 400
         if amount_pesewas < minimum:
             return jsonify({"error": f"Minimum withdrawal is GHS {minimum/100:.2f}."}), 400
         if amount_pesewas > user["wallet_pesewas"]:
             return jsonify({"error": "Insufficient wallet balance."}), 400
 
-        # Insert first — if this fails, balance is untouched
-        db.execute(
-            """INSERT INTO wallet_withdrawals (id, user_id, amount_pesewas, mobile_number, network, status)
-               VALUES (?,?,?,?,?,'pending')""",
-            (str(uuid.uuid4()), uid, amount_pesewas, mobile, network)
-        )
-        # Deduct only after successful insert
+        wd_id = str(uuid.uuid4())
+        reference = f"WD-{wd_id[:8].upper()}"
+
+        # Deduct balance FIRST (defensive: prevents double-spend)
         db.execute(
             "UPDATE users SET wallet_pesewas = wallet_pesewas - ? WHERE id=?",
             (amount_pesewas, uid)
         )
+        # Record the withdrawal as processing immediately
+        db.execute(
+            """INSERT INTO wallet_withdrawals
+               (id, user_id, amount_pesewas, mobile_number, network, status, paystack_transfer_code)
+               VALUES (?,?,?,?,?,'processing',?)""",
+            (wd_id, uid, amount_pesewas,
+             user["momo_number"], user["momo_network"], reference)
+        )
 
-    return jsonify({"ok": True})
+    # Hit Paystack AFTER the DB commit — rollback on any failure
+    try:
+        initiate_transfer(
+            config["PAYSTACK_SECRET_KEY"],
+            amount_pesewas,
+            user["payout_recipient_code"],
+            reference,
+            reason="Mac Data Hub wallet withdrawal"
+        )
+    except Exception as exc:
+        # Rollback: refund the deducted balance and mark failed
+        with global_db(config) as db:
+            db.execute(
+                "UPDATE users SET wallet_pesewas = wallet_pesewas + ? WHERE id=?",
+                (amount_pesewas, uid)
+            )
+            db.execute(
+                "UPDATE wallet_withdrawals SET status='failed' WHERE id=?",
+                (wd_id,)
+            )
+        return jsonify({"error": f"Transfer failed. Your balance has been restored. ({exc})"}), 502
+
+    return jsonify({"ok": True, "message": "Transfer initiated. Funds will arrive shortly."})
 
 
 @reseller_bp.route("/store", methods=["GET", "POST"])

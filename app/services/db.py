@@ -62,6 +62,10 @@ _MIGRATIONS = [
     )""",
     # Store logo URL
     "ALTER TABLE stores ADD COLUMN logo_url TEXT",
+    # Payout profile columns (mobile money recipient saved permanently per reseller)
+    "ALTER TABLE users ADD COLUMN payout_recipient_code TEXT",
+    "ALTER TABLE users ADD COLUMN momo_network TEXT",
+    "ALTER TABLE users ADD COLUMN momo_number TEXT",
 ]
 
 

@@ -29,13 +29,79 @@
         <div class="wbc-meta">Earned from your store sales</div>
       </div>
 
+      <!-- Payout profile -->
+      <div class="panel" style="margin-bottom:1.5rem">
+        <div class="panel-header">
+          <span class="panel-title">Payout Profile</span>
+          {% if user['payout_recipient_code'] %}
+          <span class="status-pill status-dispatched" style="font-size:.75rem">Configured</span>
+          {% else %}
+          <span class="status-pill status-pending" style="font-size:.75rem">Not set up</span>
+          {% endif %}
+        </div>
+        <div class="panel-body">
+          {% if user['payout_recipient_code'] %}
+          <div class="payout-profile-row">
+            <div class="payout-profile-info">
+              <span class="net-badge net-{{ user['momo_network'] }}">{{ (user['momo_network'] or '')|upper }}</span>
+              <span class="payout-profile-number">{{ user['momo_number'] }}</span>
+            </div>
+            <button class="btn btn-sm btn-outline" onclick="showPayoutForm()">Change</button>
+          </div>
+          <div id="payout-form-wrap" class="hidden" style="margin-top:1rem">
+          {% else %}
+          <p class="td-muted" style="font-size:.85rem;margin-bottom:1.25rem">Set up your mobile money account once. All withdrawals go here automatically.</p>
+          <div id="payout-form-wrap">
+          {% endif %}
+            <form id="payout-form" novalidate>
+              <div class="form-row wallet-form-row">
+                <div class="field">
+                  <label for="payout-name">Account name</label>
+                  <input type="text" id="payout-name" name="account_name"
+                         placeholder="Your full name as on MoMo"
+                         value="{{ user['full_name'] }}" required />
+                </div>
+                <div class="field">
+                  <label for="payout-phone">Mobile money number</label>
+                  <input type="tel" id="payout-phone" name="phone"
+                         placeholder="0241 234 567"
+                         value="{{ user['momo_number'] or '' }}" required />
+                </div>
+                <div class="field">
+                  <label for="payout-network">Network</label>
+                  <select id="payout-network" name="network" required>
+                    <option value="">Select network</option>
+                    <option value="mtn" {% if user['momo_network']=='mtn' %}selected{% endif %}>MTN Mobile Money</option>
+                    <option value="telecel" {% if user['momo_network']=='telecel' %}selected{% endif %}>Telecel Cash</option>
+                    <option value="airteltigo" {% if user['momo_network']=='airteltigo' %}selected{% endif %}>AirtelTigo Money</option>
+                  </select>
+                </div>
+              </div>
+              <div id="payout-error" class="form-error hidden"></div>
+              <div id="payout-success" class="form-success hidden"></div>
+              <button type="submit" class="btn btn-primary" id="payout-btn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Save Payout Profile
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
       <!-- Withdrawal form -->
       <div class="panel" style="margin-bottom:1.5rem">
         <div class="panel-header">
-          <span class="panel-title">Request a withdrawal</span>
+          <span class="panel-title">Withdraw funds</span>
         </div>
         <div class="panel-body">
-          <p class="td-muted" style="font-size:.85rem;margin-bottom:1.25rem">Funds are sent to your mobile money account. Minimum withdrawal: GHS {{ '%.2f'|format(min_withdrawal / 100) }}.</p>
+          {% if not user['payout_recipient_code'] %}
+          <p class="td-muted" style="font-size:.85rem">Set up your payout profile above before you can withdraw.</p>
+          {% else %}
+          <p class="td-muted" style="font-size:.85rem;margin-bottom:1.25rem">
+            Funds are sent instantly to <strong>{{ user['momo_number'] }}</strong>
+            ({{ (user['momo_network'] or '')|upper }}).
+            Minimum withdrawal: GHS {{ '%.2f'|format(min_withdrawal / 100) }}.
+          </p>
           <form id="withdraw-form" novalidate>
             <div class="form-row wallet-form-row">
               <div class="field">
@@ -50,20 +116,6 @@
                 </div>
                 <span class="field-hint">Balance: GHS {{ '%.2f'|format(user['wallet_pesewas'] / 100) }}</span>
               </div>
-              <div class="field">
-                <label for="mobile_number">Mobile money number</label>
-                <input type="tel" id="mobile_number" name="mobile_number"
-                       placeholder="0241 234 567" required />
-              </div>
-              <div class="field">
-                <label for="network">Network</label>
-                <select id="network" name="network" required>
-                  <option value="">Select network</option>
-                  <option value="mtn">MTN Mobile Money</option>
-                  <option value="telecel">Telecel Cash</option>
-                  <option value="airteltigo">AirtelTigo Money</option>
-                </select>
-              </div>
             </div>
 
             <div id="withdraw-error" class="form-error hidden"></div>
@@ -71,9 +123,10 @@
 
             <button type="submit" class="btn btn-primary" id="withdraw-btn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
-              Request withdrawal
+              Withdraw now
             </button>
           </form>
+          {% endif %}
         </div>
       </div>
 
@@ -100,7 +153,7 @@
               <tr>
                 <td class="td-bold">GHS {{ '%.2f'|format(w['amount_pesewas'] / 100) }}</td>
                 <td>{{ w['mobile_number'] }}</td>
-                <td><span class="net-badge net-{{ w['network'] }}">{{ w['network']|upper }}</span></td>
+                <td><span class="net-badge net-{{ w['network'] }}">{{ (w['network'] or '')|upper }}</span></td>
                 <td><span class="status-pill status-{{ w['status'] }}">{{ w['status'] }}</span></td>
                 <td class="td-date">{{ w['created_at'][:10] }}</td>
               </tr>

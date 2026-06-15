@@ -611,6 +611,15 @@
 .wbc-currency{ font-size: 1.1rem; vertical-align: top; margin-top: .45rem; display: inline-block; opacity: .85; }
 .wbc-meta    { font-size: .8rem; opacity: .7; margin-top: .5rem; position: relative; z-index: 1; }
 
+/* ── Payout profile row ──────────────────────────────────── */
+.payout-profile-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+}
+.payout-profile-info {
+  display: flex; align-items: center; gap: .75rem; font-size: .95rem; font-weight: 600;
+}
+.payout-profile-number { color: var(--text); }
+
 /* ── Store link card ─────────────────────────────────────── */
 .store-link-card {
   background: var(--green-light); border: 1px solid var(--green-mid);
