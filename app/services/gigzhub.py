@@ -59,13 +59,17 @@ def dispatch_bundle(api_key: str, network: str, phone: str,
         f"{_base()}/order/{network_key}",
         json=payload, headers=_headers(api_key), timeout=30
     )
-    if not resp.ok:
-        raise ValueError(
-            f"GigzHub order failed (HTTP {resp.status_code}): {resp.text[:400]}"
-        )
     try:
-        return resp.json()
+        body = resp.json()
     except Exception:
         raise ValueError(
             f"GigzHub returned non-JSON (HTTP {resp.status_code}): {resp.text[:400]}"
         )
+    # 409 DUPLICATE_ORDER means GigzHub already has this order pending — treat as success
+    if resp.status_code == 409 and body.get("type") == "DUPLICATE_ORDER":
+        return {"orderId": "", "status": "pending", "_duplicate": True}
+    if not resp.ok:
+        raise ValueError(
+            f"GigzHub order failed (HTTP {resp.status_code}): {resp.text[:400]}"
+        )
+    return body
