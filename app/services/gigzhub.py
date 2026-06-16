@@ -4,9 +4,9 @@ from flask import current_app
 _DEFAULT_BASE = "https://gigzhub.net/api/v1"
 
 NETWORK_MAP = {
-    "mtn": "mtn",
-    "telecel": "telecel",
-    "airteltigo": "at",
+    "mtn": "MTN",
+    "telecel": "Telecel",
+    "airteltigo": "AirtelTigo",
 }
 
 
