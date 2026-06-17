@@ -504,13 +504,11 @@ def broadcast():
         return jsonify({"ok": False, "error": "Title and message are required."}), 400
 
     try:
-        from ..services.push import _send_push_raw, _get_or_create_vapid_keys
+        from ..services.push import _send_push_raw, _get_or_create_vapid, _build_claims
         from pywebpush import WebPushException
 
-        private_key, _ = _get_or_create_vapid_keys(config)
-        app_url = config.get("APP_URL", "")
-        domain = app_url.replace("https://", "").replace("http://", "").split("/")[0] or "localhost"
-        claims = {"sub": f"mailto:admin@{domain}"}
+        vapid, _ = _get_or_create_vapid(config)
+        claims = _build_claims(config)
 
         with global_db(config) as db:
             rows = db.execute(
@@ -527,7 +525,7 @@ def broadcast():
         for row in subs:
             sub = {"endpoint": row["endpoint"], "keys": {"p256dh": row["p256dh"], "auth": row["auth"]}}
             try:
-                _send_push_raw(private_key, claims, sub, title, body, "/dashboard", icon)
+                _send_push_raw(vapid, claims, sub, title, body, "/dashboard", icon)
                 sent += 1
             except WebPushException:
                 stale_ids.append(row["id"])

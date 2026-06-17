@@ -5,8 +5,8 @@ from pywebpush import webpush, WebPushException
 from .db import global_db
 
 
-def _get_or_create_vapid_keys(config) -> tuple[str, str]:
-    """Return (private_key_b64, public_key_b64), generating and persisting if needed."""
+def _get_or_create_vapid(config) -> tuple[Vapid, str]:
+    """Return (Vapid instance, public_key_b64), generating and persisting if needed."""
     with global_db(config) as db:
         priv_row = db.execute(
             "SELECT value FROM app_settings WHERE key='vapid_private_key'"
@@ -15,32 +15,47 @@ def _get_or_create_vapid_keys(config) -> tuple[str, str]:
             "SELECT value FROM app_settings WHERE key='vapid_public_key'"
         ).fetchone()
 
-        if priv_row and pub_row:
-            return priv_row["value"], pub_row["value"]
+        priv_val = (priv_row["value"] or "") if priv_row else ""
+        pub_val  = (pub_row["value"]  or "") if pub_row  else ""
+        if priv_val.startswith("-----BEGIN"):
+            vapid = Vapid.from_pem(priv_val.encode())
+            return vapid, pub_val
 
-        # Generate fresh VAPID key pair
+        # Generate fresh VAPID key pair — purge stale subscriptions since they used the old key
         vapid = Vapid()
         vapid.generate_keys()
-        private_b64 = vapid.private_key_urlsafe_base64()
-        public_b64  = vapid.public_key_urlsafe_base64()
+        private_pem = vapid.private_pem().decode()
+        public_b64  = vapid.public_pem().decode()
 
         db.execute(
             "INSERT OR REPLACE INTO app_settings (key, value) VALUES ('vapid_private_key', ?)",
-            (private_b64,)
+            (private_pem,)
         )
         db.execute(
             "INSERT OR REPLACE INTO app_settings (key, value) VALUES ('vapid_public_key', ?)",
             (public_b64,)
         )
-        return private_b64, public_b64
+        db.execute("DELETE FROM push_subscriptions")
+        return vapid, public_b64
 
 
 def get_vapid_public_key(config) -> str:
-    _, pub = _get_or_create_vapid_keys(config)
-    return pub
+    """Return the public key in the format the browser needs (uncompressed EC point, base64url)."""
+    vapid, _ = _get_or_create_vapid(config)
+    # Application server key for PushManager.subscribe must be the raw public key bytes
+    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+    import base64
+    raw = vapid.public_key.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
+    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
 
 
-def _send_push_raw(private_key: str, claims: dict, subscription: dict,
+def _build_claims(config) -> dict:
+    app_url = config.get("APP_URL", "http://localhost:5000")
+    domain = app_url.replace("https://", "").replace("http://", "").split("/")[0] or "localhost"
+    return {"sub": f"mailto:admin@{domain}"}
+
+
+def _send_push_raw(vapid: Vapid, claims: dict, subscription: dict,
                    title: str, body: str, url: str, icon: str) -> bool:
     """Low-level send — no DB access. Returns True on success, raises on 410."""
     payload = json.dumps({"title": title, "body": body, "url": url, "icon": icon})
@@ -48,7 +63,7 @@ def _send_push_raw(private_key: str, claims: dict, subscription: dict,
         webpush(
             subscription_info=subscription,
             data=payload,
-            vapid_private_key=private_key,
+            vapid_private_key=vapid,
             vapid_claims=claims,
         )
         return True
@@ -61,21 +76,16 @@ def _send_push_raw(private_key: str, claims: dict, subscription: dict,
 def send_push(config, subscription: dict, title: str, body: str,
               url: str = "/", icon: str = "/static/icons/icon-192.svg") -> bool:
     """Send a push notification to one subscription. Returns True on success."""
-    private_key, _ = _get_or_create_vapid_keys(config)
-    app_url = config.get("APP_URL", "")
-    claims = {"sub": f"mailto:admin@{app_url.replace('https://', '').replace('http://', '').split('/')[0]}"}
-    return _send_push_raw(private_key, claims, subscription, title, body, url, icon)
+    vapid, _ = _get_or_create_vapid(config)
+    return _send_push_raw(vapid, _build_claims(config), subscription, title, body, url, icon)
 
 
 def broadcast_push(config, user_id: str | None, title: str, body: str,
                    url: str = "/") -> None:
     """Send push to all subscriptions for a user_id (or all guests if None)."""
+    vapid, _ = _get_or_create_vapid(config)
+    claims = _build_claims(config)
     icon = "/static/icons/icon-192.svg"
-
-    # Fetch VAPID keys and subscriptions in one DB open — no nesting
-    private_key, _ = _get_or_create_vapid_keys(config)
-    app_url = config.get("APP_URL", "")
-    claims = {"sub": f"mailto:admin@{app_url.replace('https://', '').replace('http://', '').split('/')[0]}"}
 
     with global_db(config) as db:
         if user_id:
@@ -87,18 +97,13 @@ def broadcast_push(config, user_id: str | None, title: str, body: str,
             rows = db.execute(
                 "SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id IS NULL"
             ).fetchall()
-
         rows = [dict(r) for r in rows]
 
-    # Send outside the DB context so no nested global_db calls occur
     stale_ids = []
     for row in rows:
-        sub = {
-            "endpoint": row["endpoint"],
-            "keys": {"p256dh": row["p256dh"], "auth": row["auth"]},
-        }
+        sub = {"endpoint": row["endpoint"], "keys": {"p256dh": row["p256dh"], "auth": row["auth"]}}
         try:
-            _send_push_raw(private_key, claims, sub, title, body, url, icon)
+            _send_push_raw(vapid, claims, sub, title, body, url, icon)
         except WebPushException:
             stale_ids.append(row["id"])
 
