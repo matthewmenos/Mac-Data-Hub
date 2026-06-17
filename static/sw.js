@@ -9,8 +9,8 @@ const STATIC_ASSETS = [
   '/offline',
   '/static/css/base.css',
   '/static/js/main.js',
-  '/static/icons/icon-192.svg',
-  '/static/icons/icon-512.svg',
+  '/static/icons/icon-192.png',
+  '/static/icons/icon-512.png',
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -151,7 +151,7 @@ self.addEventListener('push', e => {
     title: 'Mac Data Hub',
     body:  'You have a new notification.',
     url:   '/',
-    icon:  '/static/icons/icon-192.svg',
+    icon:  '/static/icons/icon-192.png',
   };
   if (e.data) {
     try { data = { ...data, ...JSON.parse(e.data.text()) }; } catch (_) {}
@@ -160,7 +160,7 @@ self.addEventListener('push', e => {
     self.registration.showNotification(data.title, {
       body:    data.body,
       icon:    data.icon,
-      badge:   '/static/icons/icon-192.svg',
+      badge:   '/static/icons/icon-192.png',
       data:    { url: data.url },
       vibrate: [200, 100, 200],
       tag:     'mdh-notification',

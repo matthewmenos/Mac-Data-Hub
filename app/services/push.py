@@ -74,7 +74,7 @@ def _send_push_raw(vapid: Vapid, claims: dict, subscription: dict,
 
 
 def send_push(config, subscription: dict, title: str, body: str,
-              url: str = "/", icon: str = "/static/icons/icon-192.svg") -> bool:
+              url: str = "/", icon: str = "/static/icons/icon-192.png") -> bool:
     """Send a push notification to one subscription. Returns True on success."""
     vapid, _ = _get_or_create_vapid(config)
     return _send_push_raw(vapid, _build_claims(config), subscription, title, body, url, icon)
@@ -85,7 +85,7 @@ def broadcast_push(config, user_id: str | None, title: str, body: str,
     """Send push to all subscriptions for a user_id (or all guests if None)."""
     vapid, _ = _get_or_create_vapid(config)
     claims = _build_claims(config)
-    icon = "/static/icons/icon-192.svg"
+    icon = "/static/icons/icon-192.png"
 
     with global_db(config) as db:
         if user_id:

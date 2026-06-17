@@ -3,7 +3,7 @@
   "name": "Mac Data Hub",
   "short_name": "MacData",
   "description": "Buy mobile data bundles for MTN, Telecel and AirtelTigo in Ghana. Fast, affordable, delivered in seconds.",
-  "start_url": "/?source=pwa",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#0d1117",
   "theme_color": "#006B3F",
@@ -13,21 +13,21 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/static/icons/icon-192.svg",
+      "src": "/static/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/static/icons/icon-512.svg",
+      "src": "/static/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/static/icons/icon-192.svg",
+      "src": "/static/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],
@@ -36,15 +36,15 @@
       "name": "Buy MTN Data",
       "short_name": "MTN Data",
       "description": "Browse and buy MTN data bundles",
-      "url": "/?net=mtn&source=pwa-shortcut",
-      "icons": [{ "src": "/static/icons/icon-192.svg", "sizes": "192x192" }]
+      "url": "/?net=mtn",
+      "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Track My Order",
       "short_name": "Track Order",
       "description": "Check the status of your data order",
-      "url": "/?action=track&source=pwa-shortcut",
-      "icons": [{ "src": "/static/icons/icon-192.svg", "sizes": "192x192" }]
+      "url": "/?action=track",
+      "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }
