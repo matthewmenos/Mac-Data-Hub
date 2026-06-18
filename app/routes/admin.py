@@ -2,21 +2,12 @@ import uuid
 from functools import wraps
 from flask import (Blueprint, render_template, request, redirect,
                    url_for, session, current_app, jsonify)
-from ..services.db import global_db
+from ..services.db import global_db, global_db_read
 from ..services.push import broadcast_push
 from ..services.storage import upload_asset, delete_asset
 from ..services.gigzhub import get_offers, get_balance as gigzhub_get_balance
-from ..services.paystack import create_transfer_recipient, initiate_transfer
-
 ALLOWED_LOGO_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MAX_LOGO_BYTES = 2 * 1024 * 1024
-
-# Paystack Ghana mobile money bank codes
-MOMO_BANK_CODES = {
-    "mtn":        "MTN",
-    "telecel":    "VDF",
-    "airteltigo": "ATL",
-}
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -34,7 +25,7 @@ def admin_required(f):
 @admin_required
 def dashboard():
     config = current_app.config
-    with global_db(config) as db:
+    with global_db_read(config) as db:
         total_orders   = db.execute("SELECT COUNT(*) as c FROM orders").fetchone()["c"]
         total_revenue  = db.execute(
             "SELECT COALESCE(SUM(amount_pesewas),0) as t FROM orders WHERE status='dispatched'"
@@ -111,7 +102,7 @@ def notifications():
     config = current_app.config
     items = []
     last_seen = request.args.get("last_seen", "")
-    with global_db(config) as db:
+    with global_db_read(config) as db:
         pending_orders = db.execute(
             "SELECT COUNT(*) as c FROM orders WHERE status='pending'"
         ).fetchone()["c"]
@@ -236,7 +227,7 @@ def gigzhub_prices():
 @admin_required
 def resellers():
     config = current_app.config
-    with global_db(config) as db:
+    with global_db_read(config) as db:
         all_resellers = db.execute(
             """SELECT u.*, s.slug, s.store_name,
                (SELECT COUNT(*) FROM orders o JOIN stores st ON st.id=o.store_id WHERE st.user_id=u.id) as order_count
@@ -268,7 +259,7 @@ def toggle_reseller(user_id):
 @admin_required
 def orders():
     config = current_app.config
-    with global_db(config) as db:
+    with global_db_read(config) as db:
         all_orders = db.execute(
             """SELECT o.*, b.label as bundle_label, s.store_name
                FROM orders o
@@ -347,99 +338,23 @@ def redispatch_order(order_id):
     return jsonify({"ok": True, "gigzhub_id": gigzhub_id})
 
 
-@admin_bp.route("/withdrawals", methods=["GET", "POST"])
+@admin_bp.route("/withdrawals")
 @admin_required
 def withdrawals():
     config = current_app.config
-    with global_db(config) as db:
-        if request.method == "GET":
-            all_wd = db.execute(
-                """SELECT w.*, u.full_name, u.email, u.phone
-                   FROM wallet_withdrawals w JOIN users u ON u.id = w.user_id
-                   ORDER BY CASE w.status WHEN 'pending' THEN 0 ELSE 1 END, w.created_at DESC"""
-            ).fetchall()
-            counts = {
-                "total":      db.execute("SELECT COUNT(*) as c FROM wallet_withdrawals").fetchone()["c"],
-                "pending":    db.execute("SELECT COUNT(*) as c FROM wallet_withdrawals WHERE status='pending'").fetchone()["c"],
-                "processing": db.execute("SELECT COUNT(*) as c FROM wallet_withdrawals WHERE status='processing'").fetchone()["c"],
-                "paid":       db.execute("SELECT COUNT(*) as c FROM wallet_withdrawals WHERE status='paid'").fetchone()["c"],
-                "failed":     db.execute("SELECT COUNT(*) as c FROM wallet_withdrawals WHERE status='failed'").fetchone()["c"],
-            }
-            return render_template("admin/withdrawals.html", withdrawals=all_wd, counts=counts)
-
-        data = request.get_json()
-        new_status = data["status"]
-        wd = db.execute(
-            """SELECT w.*, u.full_name, u.email
+    with global_db_read(config) as db:
+        all_wd = db.execute(
+            """SELECT w.*, u.full_name, u.email, u.phone
                FROM wallet_withdrawals w JOIN users u ON u.id = w.user_id
-               WHERE w.id=?""",
-            (data["id"],)
-        ).fetchone()
-        if not wd:
-            return jsonify({"ok": False, "error": "Withdrawal not found."}), 404
-
-        # Reject path — only allowed while still pending (before Paystack transfer is sent)
-        if new_status == "failed":
-            if wd["status"] != "pending":
-                return jsonify({"ok": False, "error": "Only pending withdrawals can be rejected. Processing withdrawals are handled automatically by Paystack."}), 400
-            db.execute("UPDATE wallet_withdrawals SET status='failed' WHERE id=?", (data["id"],))
-            db.execute(
-                "UPDATE users SET wallet_pesewas = wallet_pesewas + ? WHERE id=?",
-                (wd["amount_pesewas"], wd["user_id"])
-            )
-            try:
-                broadcast_push(config, wd["user_id"],
-                               "Withdrawal rejected",
-                               f"Your GHS {wd['amount_pesewas']/100:.2f} withdrawal was rejected. Your balance has been restored.",
-                               "/dashboard/wallet")
-            except Exception:
-                pass
-            return jsonify({"ok": True})
-
-        # Approve path — trigger Paystack transfer
-        if new_status == "approved":
-            if wd["status"] != "pending":
-                return jsonify({"ok": False, "error": "Only pending withdrawals can be approved."}), 400
-
-            bank_code = MOMO_BANK_CODES.get(wd["network"].lower())
-            if not bank_code:
-                return jsonify({"ok": False, "error": f"Unsupported network: {wd['network']}"}), 400
-
-            try:
-                recipient = create_transfer_recipient(
-                    config["PAYSTACK_SECRET_KEY"],
-                    wd["full_name"],
-                    wd["mobile_number"],
-                    bank_code,
-                )
-                recipient_code = recipient["data"]["recipient_code"]
-
-                transfer_ref = f"WD-{data['id'][:8].upper()}"
-                transfer = initiate_transfer(
-                    config["PAYSTACK_SECRET_KEY"],
-                    wd["amount_pesewas"],
-                    recipient_code,
-                    transfer_ref,
-                    reason=f"Wallet withdrawal for {wd['full_name']}",
-                )
-                transfer_code = transfer["data"].get("transfer_code", "")
-                db.execute(
-                    "UPDATE wallet_withdrawals SET status='processing', paystack_transfer_code=? WHERE id=?",
-                    (transfer_code, data["id"])
-                )
-                try:
-                    broadcast_push(config, wd["user_id"],
-                                   "Withdrawal approved",
-                                   f"Your GHS {wd['amount_pesewas']/100:.2f} withdrawal is being processed.",
-                                   "/dashboard/wallet")
-                except Exception:
-                    pass
-                return jsonify({"ok": True, "status": "processing"})
-
-            except Exception as exc:
-                return jsonify({"ok": False, "error": f"Paystack transfer failed: {str(exc)}"}), 502
-
-        return jsonify({"ok": False, "error": "Invalid status."}), 400
+               ORDER BY w.created_at DESC"""
+        ).fetchall()
+        counts = {
+            "total":      db.execute("SELECT COUNT(*) as c FROM wallet_withdrawals").fetchone()["c"],
+            "processing": db.execute("SELECT COUNT(*) as c FROM wallet_withdrawals WHERE status='processing'").fetchone()["c"],
+            "paid":       db.execute("SELECT COUNT(*) as c FROM wallet_withdrawals WHERE status='paid'").fetchone()["c"],
+            "failed":     db.execute("SELECT COUNT(*) as c FROM wallet_withdrawals WHERE status='failed'").fetchone()["c"],
+        }
+    return render_template("admin/withdrawals.html", withdrawals=all_wd, counts=counts)
 
 
 @admin_bp.route("/settings", methods=["GET", "POST"])
@@ -539,7 +454,7 @@ def broadcast():
         claims   = _build_claims(config)
         icon     = "/static/icons/icon-192.png"
 
-        with global_db(config) as db:
+        with global_db_read(config) as db:
             subs = [dict(r) for r in db.execute(
                 """SELECT ps.id, ps.endpoint, ps.p256dh, ps.auth
                    FROM push_subscriptions ps

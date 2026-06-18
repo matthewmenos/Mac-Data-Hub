@@ -2,7 +2,7 @@ import uuid
 from flask import (Blueprint, render_template, request, redirect,
                    url_for, session, flash, current_app, jsonify)
 from werkzeug.security import generate_password_hash, check_password_hash
-from ..services.db import global_db
+from ..services.db import global_db, global_db_read
 from ..services.paystack import initialize_transaction
 
 auth_bp = Blueprint("auth", __name__)
@@ -25,7 +25,7 @@ def login():
         session["email"] = email
         return redirect(url_for("admin.dashboard"))
 
-    with global_db(config) as db:
+    with global_db_read(config) as db:
         user = db.execute(
             "SELECT * FROM users WHERE email=? AND is_active=1", (email,)
         ).fetchone()
@@ -58,7 +58,7 @@ def apply_page():
 def register():
     if request.method == "GET":
         config = current_app.config
-        with global_db(config) as db:
+        with global_db_read(config) as db:
             fee_row  = db.execute(
                 "SELECT value FROM app_settings WHERE key='reseller_registration_fee_pesewas'"
             ).fetchone()

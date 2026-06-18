@@ -23,15 +23,12 @@ def _user_local_path(config, user_id: str) -> str:
 
 
 def init_global_db(config) -> None:
-    """Pull global.db from R2 (or create fresh) and apply schema + migrations."""
+    """Pull global.db from R2 on every startup so the local file is never stale after a reboot."""
     local = _global_local_path(config)
-    is_new = False
-    if not os.path.exists(local):
-        found = download_db(config, _global_r2_key(), local)
-        is_new = not found
-    # Always apply schema and migrations regardless of where the file came from
+    found = download_db(config, _global_r2_key(), local)
     _apply_schema(local, GLOBAL_SCHEMA)
-    if is_new:
+    if not found:
+        # Brand-new deployment — upload the freshly created schema
         upload_db(config, local, _global_r2_key())
 
 
@@ -96,7 +93,7 @@ def _apply_schema(db_path: str, schema: str) -> None:
 
 @contextmanager
 def global_db(config):
-    """Context manager: open global DB, yield connection, upload on clean exit."""
+    """Open global DB, commit and upload to R2 on clean exit. Use for writes."""
     local = _global_local_path(config)
     conn = sqlite3.connect(local)
     conn.row_factory = sqlite3.Row
@@ -114,8 +111,23 @@ def global_db(config):
 
 
 @contextmanager
+def global_db_read(config):
+    """Open global DB read-only — no commit, no R2 upload."""
+    local = _global_local_path(config)
+    if not os.path.exists(local):
+        init_global_db(config)
+    conn = sqlite3.connect(local)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+
+@contextmanager
 def user_db(config, user_id: str):
-    """Context manager: open a reseller's personal DB, yield connection, upload on clean exit."""
+    """Open reseller DB, commit and upload to R2 on clean exit. Use for writes."""
     local = _user_local_path(config, user_id)
     if not os.path.exists(local):
         init_user_db(config, user_id)
@@ -130,5 +142,20 @@ def user_db(config, user_id: str):
     except Exception:
         conn.rollback()
         raise
+    finally:
+        conn.close()
+
+
+@contextmanager
+def user_db_read(config, user_id: str):
+    """Open reseller DB read-only — no commit, no R2 upload."""
+    local = _user_local_path(config, user_id)
+    if not os.path.exists(local):
+        init_user_db(config, user_id)
+    conn = sqlite3.connect(local)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    try:
+        yield conn
     finally:
         conn.close()

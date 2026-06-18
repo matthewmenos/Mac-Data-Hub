@@ -2,7 +2,7 @@ import uuid
 from functools import wraps
 from flask import (Blueprint, render_template, request, redirect,
                    url_for, session, current_app, jsonify)
-from ..services.db import global_db, user_db
+from ..services.db import global_db, global_db_read, user_db, user_db_read
 from ..services.storage import upload_asset, delete_asset
 from ..services.paystack import create_transfer_recipient, initiate_transfer
 
@@ -25,7 +25,7 @@ def reseller_required(f):
 
 def _ctx(config):
     uid = session["user_id"]
-    with global_db(config) as db:
+    with global_db_read(config) as db:
         user = dict(db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone())
         store_row = db.execute("SELECT * FROM stores WHERE user_id=?", (uid,)).fetchone()
         store = dict(store_row) if store_row else None
@@ -39,7 +39,7 @@ def dashboard():
     uid, user, store = _ctx(config)
 
     recent_orders, total_earned, total_orders = [], 0, 0
-    with user_db(config, uid) as udb:
+    with user_db_read(config, uid) as udb:
         rows = udb.execute("SELECT * FROM orders ORDER BY created_at DESC LIMIT 10").fetchall()
         recent_orders = [dict(r) for r in rows]
         row = udb.execute("SELECT COALESCE(SUM(amount_pesewas),0) AS t FROM earnings").fetchone()
@@ -62,8 +62,8 @@ def notifications():
     last_seen = request.args.get("last_seen", "")
     items = []
 
-    # Orders from the reseller's personal DB
-    with user_db(config, uid) as udb:
+    # Orders from the reseller's personal DB — read-only, no R2 upload
+    with user_db_read(config, uid) as udb:
         for o in udb.execute(
             "SELECT bundle_label, network, profit_pesewas, created_at "
             "FROM orders ORDER BY created_at DESC LIMIT 8"
@@ -82,8 +82,8 @@ def notifications():
             (last_seen,) if last_seen else ()
         ).fetchone()["c"]
 
-    # Broadcasts from global DB
-    with global_db(config) as gdb:
+    # Broadcasts from global DB — read-only, no R2 upload
+    with global_db_read(config) as gdb:
         for b in gdb.execute(
             "SELECT title, body, created_at FROM broadcasts ORDER BY created_at DESC LIMIT 5"
         ).fetchall():
@@ -113,7 +113,7 @@ def orders():
     config = current_app.config
     uid, user, store = _ctx(config)
 
-    with user_db(config, uid) as udb:
+    with user_db_read(config, uid) as udb:
         rows = udb.execute("SELECT * FROM orders ORDER BY created_at DESC").fetchall()
 
     return render_template("reseller/orders.html",
@@ -130,7 +130,7 @@ def pricing():
     if not store:
         return redirect(url_for("reseller.dashboard"))
 
-    with global_db(config) as db:
+    with global_db_read(config) as db:
         bundles = [dict(b) for b in db.execute(
             "SELECT * FROM data_bundles WHERE is_active=1 ORDER BY network, volume_mb"
         ).fetchall()]
@@ -172,7 +172,7 @@ def wallet():
     config = current_app.config
     uid, user, store = _ctx(config)
 
-    with global_db(config) as db:
+    with global_db_read(config) as db:
         rows = db.execute(
             "SELECT * FROM wallet_withdrawals WHERE user_id=? ORDER BY created_at DESC",
             (uid,)

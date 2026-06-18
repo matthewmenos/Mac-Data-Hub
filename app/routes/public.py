@@ -1,7 +1,7 @@
 import uuid
 from flask import Blueprint, render_template, request, jsonify, current_app, redirect, url_for, send_from_directory
 import os
-from ..services.db import global_db, user_db
+from ..services.db import global_db, global_db_read, user_db
 from ..services.paystack import initialize_transaction, verify_transaction, add_paystack_charge
 from ..services.gigzhub import dispatch_bundle
 from ..services.push import broadcast_push
@@ -27,7 +27,7 @@ def offline():
 @public_bp.route("/")
 def home():
     config = current_app.config
-    with global_db(config) as db:
+    with global_db_read(config) as db:
         bundles = db.execute(
             "SELECT * FROM data_bundles WHERE is_active=1 ORDER BY network, volume_mb"
         ).fetchall()
@@ -40,7 +40,7 @@ def home():
 @public_bp.route("/s/<slug>")
 def storefront(slug):
     config = current_app.config
-    with global_db(config) as db:
+    with global_db_read(config) as db:
         store = db.execute("SELECT * FROM stores WHERE slug=?", (slug,)).fetchone()
         if not store:
             return render_template("public/404.html"), 404
@@ -64,7 +64,7 @@ def checkout():
     if request.method == "GET":
         bundle_id = request.args.get("bundle_id")
         store_id = request.args.get("store_id")
-        with global_db(config) as db:
+        with global_db_read(config) as db:
             bundle = db.execute("SELECT * FROM data_bundles WHERE id=?", (bundle_id,)).fetchone()
             store = db.execute("SELECT * FROM stores WHERE id=?", (store_id,)).fetchone() if store_id else None
             price_row = None
@@ -142,7 +142,7 @@ def track_orders():
     if not phone:
         return jsonify({"error": "Phone number is required."}), 400
     config = current_app.config
-    with global_db(config) as db:
+    with global_db_read(config) as db:
         if store_id:
             rows = db.execute(
                 """SELECT o.id, o.network, o.volume_mb, o.amount_pesewas,
@@ -183,7 +183,7 @@ def verify_payment():
     if not reference:
         return jsonify({"ok": False, "error": "Paystack reference is required."}), 400
 
-    with global_db(config) as db:
+    with global_db_read(config) as db:
         order = db.execute(
             """SELECT o.*, b.offer_slug, b.label as bundle_label
                FROM orders o

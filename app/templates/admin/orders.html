@@ -95,7 +95,7 @@
                 </td>
                 <td class="td-sm td-muted">{{ o['store_name'] or 'Direct' }}</td>
                 <td class="td-bold">GHS {{ '%.2f'|format(o['amount_pesewas'] / 100) }}</td>
-                <td class="td-muted">GHS {{ '%.2f'|format(o['profit_pesewas'] / 100) }}</td>
+                <td class="td-muted">{% if o['status'] == 'dispatched' %}GHS {{ '%.2f'|format(o['profit_pesewas'] / 100) }}{% else %}—{% endif %}</td>
                 <td>
                   <span class="status-pill status-{{ o['status'] }}">{{ o['status'] }}</span>
                   {% if o['gigzhub_error'] %}

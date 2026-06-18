@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Flask, render_template, request, session
 from .config import Config
-from .services.db import init_global_db, global_db
+from .services.db import init_global_db, global_db_read
 
 
 def create_app():
@@ -50,7 +50,7 @@ def create_app():
         }
         role = session.get("role")
         try:
-            with global_db(app.config) as db:
+            with global_db_read(app.config) as db:
                 wa_row = db.execute(
                     "SELECT value FROM app_settings WHERE key='whatsapp_channel_url'"
                 ).fetchone()
