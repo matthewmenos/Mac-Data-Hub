@@ -227,10 +227,11 @@
   display: flex; align-items: center; justify-content: center;
   background: var(--bg-2);
 }
-.notif-item-icon.green   { background: var(--green-light); color: var(--green); }
-.notif-item-icon.orange  { background: var(--notif-orange-bg, #fff7ed); color: var(--notif-orange-text, #ea580c); }
-.notif-item-icon.blue    { background: var(--notif-blue-bg,   #eff6ff); color: var(--notif-blue-text,   #2563eb); }
-.notif-item-icon.red     { background: var(--notif-red-bg,    #fef2f2); color: var(--notif-red-text,    #dc2626); }
+.notif-item-icon.green     { background: var(--green-light); color: var(--green); }
+.notif-item-icon.orange    { background: var(--notif-orange-bg, #fff7ed); color: var(--notif-orange-text, #ea580c); }
+.notif-item-icon.blue      { background: var(--notif-blue-bg,   #eff6ff); color: var(--notif-blue-text,   #2563eb); }
+.notif-item-icon.red       { background: var(--notif-red-bg,    #fef2f2); color: var(--notif-red-text,    #dc2626); }
+.notif-item-icon.broadcast { background: #f5f3ff; color: #7c3aed; }
 .notif-item-body { flex: 1; min-width: 0; }
 .notif-item-msg  { font-size: .82rem; color: var(--text); line-height: 1.45; }
 .notif-item-msg strong { font-weight: 700; }
@@ -858,20 +859,36 @@
 
   /* Admin: Orders */
   .tbl-admin-orders tr { grid-template-columns: 1fr 1fr; }
-  .tbl-admin-orders td:nth-child(1) { grid-column: 1/-1; }
-  .tbl-admin-orders td:nth-child(1)::before { content: 'REF '; }
-  .tbl-admin-orders td:nth-child(2) { grid-column: 1/-1; }
-  .tbl-admin-orders td:nth-child(2)::before { content: ''; }
-  .tbl-admin-orders td:nth-child(3)::before { content: 'NETWORK '; }
-  .tbl-admin-orders td:nth-child(4)::before { content: 'BUNDLE '; }
-  .tbl-admin-orders td:nth-child(5)::before { content: 'STORE '; }
-  .tbl-admin-orders td:nth-child(6)::before { content: 'AMOUNT '; }
-  .tbl-admin-orders td:nth-child(7)::before { content: 'PROFIT '; }
-  .tbl-admin-orders td:nth-child(8) { grid-column: 1/-1; }
-  .tbl-admin-orders td:nth-child(8)::before { content: ''; }
-  .tbl-admin-orders td:nth-child(9)::before { content: 'DATE '; }
+
+  /* Row 1: reference full width */
+  .tbl-admin-orders td:nth-child(1) { grid-column: 1/-1; align-items: flex-start; }
+  .tbl-admin-orders td:nth-child(1)::before { content: 'REF'; }
+
+  /* Row 2: customer full width, no label */
+  .tbl-admin-orders td:nth-child(2) { grid-column: 1/-1; flex-direction: column; align-items: flex-start; gap: .1rem; }
+  .tbl-admin-orders td:nth-child(2)::before { display: none; }
+
+  /* Row 3+4: network + bundle side by side */
+  .tbl-admin-orders td:nth-child(3)::before { content: 'Network'; }
+  .tbl-admin-orders td:nth-child(4) { flex-direction: column; align-items: flex-start; gap: .1rem; }
+  .tbl-admin-orders td:nth-child(4)::before { content: 'Bundle'; }
+
+  /* Row 5+6: store + amount side by side */
+  .tbl-admin-orders td:nth-child(5)::before { content: 'Store'; }
+  .tbl-admin-orders td:nth-child(6)::before { content: 'Amount'; }
+
+  /* Row 7+9: profit + date side by side */
+  .tbl-admin-orders td:nth-child(7)::before { content: 'Profit'; }
+  .tbl-admin-orders td:nth-child(9)::before { content: 'Date'; }
+
+  /* Row 8: status full width, allow vertical stacking for error */
+  .tbl-admin-orders td:nth-child(8) { grid-column: 1/-1; flex-direction: column; align-items: flex-start; gap: .25rem; }
+  .tbl-admin-orders td:nth-child(8)::before { display: none; }
+
+  /* Row 10: retry button full width */
   .tbl-admin-orders td:nth-child(10) { grid-column: 1/-1; }
   .tbl-admin-orders td:nth-child(10)::before { display: none; }
+  .tbl-admin-orders td:nth-child(10) .btn { width: 100%; justify-content: center; }
 
   /* Admin: Resellers */
   .tbl-admin-resellers tr { grid-template-columns: 1fr 1fr; }

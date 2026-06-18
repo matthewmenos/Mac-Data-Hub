@@ -60,7 +60,6 @@ def notifications():
     config = current_app.config
     uid, user, _ = _ctx(config)
     items = []
-    # last_seen lets the client tell us what it already saw, so unread count is accurate
     last_seen = request.args.get("last_seen", "")
 
     with user_db(config, uid) as udb:
@@ -69,12 +68,25 @@ def notifications():
             "FROM orders ORDER BY created_at DESC LIMIT 8"
         ).fetchall()
         if last_seen:
-            unread_count = udb.execute(
+            unread_orders = udb.execute(
                 "SELECT COUNT(*) as c FROM orders WHERE created_at > ?", (last_seen,)
             ).fetchone()["c"]
         else:
-            unread_count = udb.execute(
+            unread_orders = udb.execute(
                 "SELECT COUNT(*) as c FROM orders WHERE created_at >= datetime('now','-24 hours')"
+            ).fetchone()["c"]
+
+    with global_db(config) as gdb:
+        recent_broadcasts = gdb.execute(
+            "SELECT id, title, body, created_at FROM broadcasts ORDER BY created_at DESC LIMIT 5"
+        ).fetchall()
+        if last_seen:
+            unread_broadcasts = gdb.execute(
+                "SELECT COUNT(*) as c FROM broadcasts WHERE created_at > ?", (last_seen,)
+            ).fetchone()["c"]
+        else:
+            unread_broadcasts = gdb.execute(
+                "SELECT COUNT(*) as c FROM broadcasts WHERE created_at >= datetime('now','-24 hours')"
             ).fetchone()["c"]
 
     for o in recent_orders:
@@ -85,9 +97,24 @@ def notifications():
             "msg": f"<strong>{o['bundle_label']}</strong> order — +{profit} profit",
             "time": o["created_at"][:16].replace("T", " "),
             "url": "/dashboard/orders",
+            "sort_key": o["created_at"],
         })
 
-    return jsonify({"items": items, "unread": unread_count})
+    for b in recent_broadcasts:
+        items.append({
+            "type": "broadcast",
+            "icon": "broadcast",
+            "msg": f"<strong>{b['title']}</strong> — {b['body']}",
+            "time": b["created_at"][:16].replace("T", " "),
+            "url": "/dashboard",
+            "sort_key": b["created_at"],
+        })
+
+    items.sort(key=lambda x: x.get("sort_key", ""), reverse=True)
+    for item in items:
+        item.pop("sort_key", None)
+
+    return jsonify({"items": items, "unread": unread_orders + unread_broadcasts})
 
 
 @reseller_bp.route("/orders")

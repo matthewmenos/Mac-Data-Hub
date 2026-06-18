@@ -549,6 +549,12 @@ def broadcast():
                 for sid in stale_ids:
                     db.execute("DELETE FROM push_subscriptions WHERE id=?", (sid,))
 
+        with global_db(config) as db:
+            db.execute(
+                "INSERT INTO broadcasts (id, title, body) VALUES (?,?,?)",
+                (str(uuid.uuid4()), title, body),
+            )
+
         return jsonify({"ok": True, "sent_to": sent})
 
     except Exception as exc:

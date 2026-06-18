@@ -49,6 +49,13 @@ def init_user_db(config, user_id: str) -> None:
 
 
 _MIGRATIONS = [
+    # Broadcast messages from admin to all resellers
+    """CREATE TABLE IF NOT EXISTS broadcasts (
+        id         TEXT PRIMARY KEY,
+        title      TEXT NOT NULL,
+        body       TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )""",
     # Add guest_price_pesewas to data_bundles (idempotent — ignored if column exists)
     "ALTER TABLE data_bundles ADD COLUMN guest_price_pesewas INTEGER NOT NULL DEFAULT 0",
     # Push subscriptions table (CREATE TABLE IF NOT EXISTS is idempotent but listed here for clarity)

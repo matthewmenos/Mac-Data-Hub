@@ -41,10 +41,11 @@ function toggleTheme() {
 
 // ── Notifications ─────────────────────────────────────────────
 const ICON_SVG = {
-  green:  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
-  orange: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-  blue:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
-  red:    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+  green:     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
+  orange:    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  blue:      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  red:       '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+  broadcast: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>',
 };
 
 let _notifLoaded  = false;
@@ -152,31 +153,44 @@ function _urlBase64ToUint8Array(base64String) {
 
 async function _initPush() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-  // Don't ask on pages that aren't dashboard/admin (avoids annoying guests)
   const isDash = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/admin');
   if (!isDash) return;
 
   try {
     const reg = await navigator.serviceWorker.ready;
 
-    // Fetch VAPID public key
+    // Fetch current VAPID public key from server
     const keyResp = await fetch('/push/vapid-public-key');
     if (!keyResp.ok) return;
     const { key } = await keyResp.json();
+    const keyBytes = _urlBase64ToUint8Array(key);
 
-    // Check existing subscription
+    // Check existing subscription — if VAPID key changed, force re-subscribe
     let sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      // Compare existing key with current server key
+      const existingKey = sub.options && sub.options.applicationServerKey
+        ? btoa(String.fromCharCode(...new Uint8Array(sub.options.applicationServerKey)))
+            .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+        : null;
+      const serverKey = key.replace(/=+$/, '');
+      if (existingKey !== serverKey) {
+        // Key mismatch — unsubscribe so we re-subscribe with new key
+        await sub.unsubscribe();
+        sub = null;
+      }
+    }
+
     if (!sub) {
-      // Request permission first
       const perm = await Notification.requestPermission();
       if (perm !== 'granted') return;
       sub = await reg.pushManager.subscribe({
         userVisibleOnly:      true,
-        applicationServerKey: _urlBase64ToUint8Array(key),
+        applicationServerKey: keyBytes,
       });
     }
 
-    // Send subscription to server
+    // Register subscription with server
     await fetch('/push/subscribe', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
