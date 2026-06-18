@@ -1,13 +1,14 @@
 // ── Cache version — bump this string to invalidate all caches on next deploy ──
-const VERSION = 'v3';
+const VERSION = 'v4';
 
 const STATIC_CACHE  = `mdh-static-${VERSION}`;
 const DYNAMIC_CACHE = `mdh-dynamic-${VERSION}`;
 
-// Pre-cached shell — versioned, rarely changing assets
+// Pre-cached app shell — everything a reseller/admin needs without hitting the network
 const STATIC_ASSETS = [
   '/offline',
   '/static/css/base.css',
+  '/static/css/dashboard.css',
   '/static/js/main.js',
   '/static/icons/icon-192.png',
   '/static/icons/icon-512.png',
@@ -15,25 +16,31 @@ const STATIC_ASSETS = [
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
+// Strip query strings when caching static assets so ?v=123 busting params
+// don't create duplicate cache entries for the same file.
+function staticCacheKey(request) {
+  const url = new URL(request.url);
+  url.search = '';
+  return new Request(url.toString(), { headers: request.headers });
+}
+
 function isStaticAsset(url) {
   const p = url.pathname;
   return p.startsWith('/static/') || p === '/offline';
 }
 
-function isApiRequest(url) {
+// Routes that must always go to the network — never cache responses here
+function isNetworkOnly(url) {
   return (
+    url.pathname.startsWith('/push/') ||
     url.pathname.startsWith('/checkout') ||
     url.pathname.startsWith('/verify-payment') ||
     url.pathname.startsWith('/track') ||
-    url.pathname.startsWith('/push/') ||
+    url.pathname.startsWith('/auth/') ||
     url.pathname.startsWith('/admin/') ||
-    url.pathname.startsWith('/dashboard/') ||
-    url.pathname.startsWith('/auth/')
+    url.pathname.startsWith('/dashboard/notifications') ||
+    url.pathname.startsWith('/webhook/')
   );
-}
-
-function isNavigationRequest(request) {
-  return request.mode === 'navigate';
 }
 
 function trimCache(cacheName, maxItems) {
@@ -55,14 +62,12 @@ self.addEventListener('install', e => {
   );
 });
 
-// ── Activate: purge stale caches ──────────────────────────────────────────────
+// ── Activate: purge all stale caches from old versions ────────────────────────
 self.addEventListener('activate', e => {
-  const keep = [STATIC_CACHE, DYNAMIC_CACHE];
+  const keep = new Set([STATIC_CACHE, DYNAMIC_CACHE]);
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(
-        keys.filter(k => !keep.includes(k)).map(k => caches.delete(k))
-      ))
+      .then(keys => Promise.all(keys.filter(k => !keep.has(k)).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -73,47 +78,42 @@ self.addEventListener('fetch', e => {
 
   const url = new URL(e.request.url);
 
-  // Never intercept cross-origin requests (Paystack, Google Fonts, etc.)
+  // Never intercept cross-origin requests (Paystack, Google Fonts, CDNs, etc.)
   if (url.origin !== self.location.origin) return;
 
-  // Never intercept notification/push poll endpoints
-  if (
-    url.pathname.startsWith('/push/') ||
-    url.pathname.startsWith('/admin/notifications') ||
-    url.pathname.startsWith('/dashboard/notifications')
-  ) return;
-
-  // API routes — network only, no caching
-  if (isApiRequest(url)) {
+  // Network-only routes — no caching, always live
+  if (isNetworkOnly(url)) {
     e.respondWith(fetch(e.request));
     return;
   }
 
-  // Static assets (CSS, JS, icons, fonts) — cache-first
+  // Static assets — cache-first, update in background if stale
   if (isStaticAsset(url)) {
+    const key = staticCacheKey(e.request);
     e.respondWith(
       caches.open(STATIC_CACHE).then(cache =>
-        cache.match(e.request).then(cached => {
-          if (cached) return cached;
-          return fetch(e.request).then(resp => {
-            cache.put(e.request, resp.clone());
+        cache.match(key).then(cached => {
+          const networkFetch = fetch(e.request).then(resp => {
+            if (resp.ok) cache.put(key, resp.clone());
             return resp;
           });
+          // Return cache immediately; fetch runs in background to keep it fresh
+          return cached || networkFetch;
         })
       )
     );
     return;
   }
 
-  // HTML navigation — network-first, fallback to cache, then offline page
-  if (isNavigationRequest(e.request)) {
+  // HTML navigation — network-first, fall back to cache, then offline page
+  if (e.request.mode === 'navigate') {
     e.respondWith(
       fetch(e.request)
         .then(resp => {
           const clone = resp.clone();
           caches.open(DYNAMIC_CACHE).then(c => {
             c.put(e.request, clone);
-            trimCache(DYNAMIC_CACHE, 20);
+            trimCache(DYNAMIC_CACHE, 25);
           });
           return resp;
         })
@@ -130,8 +130,10 @@ self.addEventListener('fetch', e => {
     caches.open(DYNAMIC_CACHE).then(cache =>
       cache.match(e.request).then(cached => {
         const fetchPromise = fetch(e.request).then(resp => {
-          cache.put(e.request, resp.clone());
-          trimCache(DYNAMIC_CACHE, 30);
+          if (resp.ok) {
+            cache.put(e.request, resp.clone());
+            trimCache(DYNAMIC_CACHE, 40);
+          }
           return resp;
         });
         return cached || fetchPromise;
@@ -152,18 +154,23 @@ self.addEventListener('push', e => {
     body:  'You have a new notification.',
     url:   '/',
     icon:  '/static/icons/icon-192.png',
+    type:  'order',
   };
   if (e.data) {
     try { data = { ...data, ...JSON.parse(e.data.text()) }; } catch (_) {}
   }
+
+  // Broadcasts get their own tag so they don't replace order notifications
+  const tag = data.type === 'broadcast' ? 'mdh-broadcast' : 'mdh-order';
+
   e.waitUntil(
     self.registration.showNotification(data.title, {
-      body:    data.body,
-      icon:    data.icon,
-      badge:   '/static/icons/icon-192.png',
-      data:    { url: data.url },
-      vibrate: [200, 100, 200],
-      tag:     'mdh-notification',
+      body:     data.body,
+      icon:     data.icon,
+      badge:    '/static/icons/icon-192.png',
+      data:     { url: data.url },
+      vibrate:  [200, 100, 200],
+      tag:      tag,
       renotify: true,
     })
   );

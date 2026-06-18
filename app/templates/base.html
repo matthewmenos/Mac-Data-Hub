@@ -11,10 +11,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="dns-prefetch" href="https://api.paystack.co" />
   <link rel="preload" href="/static/css/base.css" as="style" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet" /></noscript>
   <link rel="manifest" href="/static/manifest.json" />
   <link rel="icon" href="/static/icons/icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MacData" />
   <link rel="stylesheet" href="/static/css/base.css" />
   {% block head %}{% endblock %}
   <script>
@@ -146,7 +151,7 @@
   {% block scripts %}{% endblock %}
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(reg => {
+      navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' }).then(reg => {
         reg.addEventListener('updatefound', () => {
           const sw = reg.installing;
           if (!sw) return;

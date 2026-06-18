@@ -537,7 +537,7 @@ def broadcast():
         for row in subs:
             sub = {"endpoint": row["endpoint"], "keys": {"p256dh": row["p256dh"], "auth": row["auth"]}}
             try:
-                _send_push_raw(vapid, claims, sub, title, body, "/dashboard", icon)
+                _send_push_raw(vapid, claims, sub, title, body, "/dashboard", icon, notif_type="broadcast")
                 sent += 1
             except WebPushException:
                 stale_ids.append(row["id"])

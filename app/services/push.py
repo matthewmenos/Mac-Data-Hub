@@ -56,9 +56,10 @@ def _build_claims(config) -> dict:
 
 
 def _send_push_raw(vapid: Vapid, claims: dict, subscription: dict,
-                   title: str, body: str, url: str, icon: str) -> bool:
+                   title: str, body: str, url: str, icon: str,
+                   notif_type: str = "order") -> bool:
     """Low-level send — no DB access. Returns True on success, raises on 410."""
-    payload = json.dumps({"title": title, "body": body, "url": url, "icon": icon})
+    payload = json.dumps({"title": title, "body": body, "url": url, "icon": icon, "type": notif_type})
     try:
         webpush(
             subscription_info=subscription,
