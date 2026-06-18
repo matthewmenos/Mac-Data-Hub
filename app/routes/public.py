@@ -206,6 +206,17 @@ def verify_payment():
                 "phone": order["customer_phone"],
             })
 
+        # Webhook already picked this up and is processing — don't double-dispatch
+        if order["status"] == "paid":
+            return jsonify({
+                "ok": True,
+                "already_done": True,
+                "message": f"Your payment is confirmed and your {order['bundle_label'] or order['network'].upper()} data is being processed. It will arrive shortly.",
+                "network": order["network"],
+                "label": order["bundle_label"],
+                "phone": order["customer_phone"],
+            })
+
         # Save values we need after closing the DB context
         offer_slug = order["offer_slug"] or ""
         order_dict = dict(order)

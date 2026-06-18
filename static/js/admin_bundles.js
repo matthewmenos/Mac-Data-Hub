@@ -47,12 +47,21 @@ document.querySelectorAll('.edit-btn').forEach(btn => {
 document.querySelectorAll('.delete-btn').forEach(btn => {
   btn.addEventListener('click', async () => {
     if (!confirm('Delete this bundle? Resellers using it will lose their pricing.')) return;
-    const resp = await fetch('/admin/bundles', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: btn.dataset.id }),
-    });
-    if (resp.ok) location.reload();
+    try {
+      const resp = await fetch('/admin/bundles', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: btn.dataset.id }),
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (resp.ok) {
+        location.reload();
+      } else {
+        alert('Delete failed: ' + (data.error || resp.status));
+      }
+    } catch (err) {
+      alert('Network error. Please try again.');
+    }
   });
 });
 

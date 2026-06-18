@@ -13,8 +13,9 @@ form.addEventListener('submit', async e => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        store_name:  document.getElementById('store_name').value.trim(),
-        description: document.getElementById('description').value.trim(),
+        store_name:        document.getElementById('store_name').value.trim(),
+        description:       document.getElementById('description').value.trim(),
+        support_whatsapp:  document.getElementById('support_whatsapp')?.value.trim() || '',
       }),
     });
     const data = await resp.json();

@@ -224,8 +224,10 @@ p  { color: var(--text-2); line-height: 1.65; }
 
 .header-actions { display: flex; align-items: center; gap: .5rem; }
 
-body:has(.dash-layout) .site-header  { display: none; }
-body:has(.dash-layout) .main-content { min-height: 100vh; }
+body:has(.dash-layout) .site-header,
+body.dash-page .site-header  { display: none; }
+body:has(.dash-layout) .main-content,
+body.dash-page .main-content { min-height: 100vh; padding-top: 0; }
 
 /* ── Flash messages ───────────────────────────────────────── */
 .flash-container { padding: .5rem 1.5rem 0; }

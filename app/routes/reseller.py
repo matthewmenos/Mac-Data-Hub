@@ -59,60 +59,50 @@ def dashboard():
 def notifications():
     config = current_app.config
     uid, user, _ = _ctx(config)
-    items = []
     last_seen = request.args.get("last_seen", "")
+    items = []
 
+    # Orders from the reseller's personal DB
     with user_db(config, uid) as udb:
-        recent_orders = udb.execute(
-            "SELECT id, bundle_label, network, profit_pesewas, created_at "
+        for o in udb.execute(
+            "SELECT bundle_label, network, profit_pesewas, created_at "
             "FROM orders ORDER BY created_at DESC LIMIT 8"
-        ).fetchall()
-        if last_seen:
-            unread_orders = udb.execute(
-                "SELECT COUNT(*) as c FROM orders WHERE created_at > ?", (last_seen,)
-            ).fetchone()["c"]
-        else:
-            unread_orders = udb.execute(
-                "SELECT COUNT(*) as c FROM orders WHERE created_at >= datetime('now','-24 hours')"
-            ).fetchone()["c"]
+        ).fetchall():
+            profit = "GHS %.2f" % (o["profit_pesewas"] / 100)
+            items.append({
+                "icon": "green",
+                "msg":  f"<strong>{o['bundle_label'] or o['network'].upper()}</strong> order — +{profit} profit",
+                "time": o["created_at"][:16].replace("T", " "),
+                "url":  "/dashboard/orders",
+                "ts":   o["created_at"],
+            })
+        unread_orders = udb.execute(
+            "SELECT COUNT(*) as c FROM orders WHERE created_at > ?" if last_seen
+            else "SELECT COUNT(*) as c FROM orders WHERE created_at >= datetime('now','-24 hours')",
+            (last_seen,) if last_seen else ()
+        ).fetchone()["c"]
 
+    # Broadcasts from global DB
     with global_db(config) as gdb:
-        recent_broadcasts = gdb.execute(
-            "SELECT id, title, body, created_at FROM broadcasts ORDER BY created_at DESC LIMIT 5"
-        ).fetchall()
-        if last_seen:
-            unread_broadcasts = gdb.execute(
-                "SELECT COUNT(*) as c FROM broadcasts WHERE created_at > ?", (last_seen,)
-            ).fetchone()["c"]
-        else:
-            unread_broadcasts = gdb.execute(
-                "SELECT COUNT(*) as c FROM broadcasts WHERE created_at >= datetime('now','-24 hours')"
-            ).fetchone()["c"]
+        for b in gdb.execute(
+            "SELECT title, body, created_at FROM broadcasts ORDER BY created_at DESC LIMIT 5"
+        ).fetchall():
+            items.append({
+                "icon": "broadcast",
+                "msg":  f"<strong>{b['title']}</strong> — {b['body']}",
+                "time": b["created_at"][:16].replace("T", " "),
+                "url":  "/dashboard",
+                "ts":   b["created_at"],
+            })
+        unread_broadcasts = gdb.execute(
+            "SELECT COUNT(*) as c FROM broadcasts WHERE created_at > ?" if last_seen
+            else "SELECT COUNT(*) as c FROM broadcasts WHERE created_at >= datetime('now','-24 hours')",
+            (last_seen,) if last_seen else ()
+        ).fetchone()["c"]
 
-    for o in recent_orders:
-        profit = "GHS %.2f" % (o["profit_pesewas"] / 100)
-        items.append({
-            "type": "order",
-            "icon": "green",
-            "msg": f"<strong>{o['bundle_label']}</strong> order — +{profit} profit",
-            "time": o["created_at"][:16].replace("T", " "),
-            "url": "/dashboard/orders",
-            "sort_key": o["created_at"],
-        })
-
-    for b in recent_broadcasts:
-        items.append({
-            "type": "broadcast",
-            "icon": "broadcast",
-            "msg": f"<strong>{b['title']}</strong> — {b['body']}",
-            "time": b["created_at"][:16].replace("T", " "),
-            "url": "/dashboard",
-            "sort_key": b["created_at"],
-        })
-
-    items.sort(key=lambda x: x.get("sort_key", ""), reverse=True)
+    items.sort(key=lambda x: x["ts"], reverse=True)
     for item in items:
-        item.pop("sort_key", None)
+        del item["ts"]
 
     return jsonify({"items": items, "unread": unread_orders + unread_broadcasts})
 

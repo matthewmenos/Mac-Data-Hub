@@ -166,7 +166,7 @@ def bundles():
             }
             return render_template("admin/bundles.html", bundles=all_bundles, counts=counts)
 
-        data = request.get_json()
+        data = request.get_json() or {}
 
         if request.method == "POST":
             bundle_id = str(uuid.uuid4())
@@ -198,6 +198,8 @@ def bundles():
             return jsonify({"ok": True})
 
         if request.method == "DELETE":
+            if not data.get("id"):
+                return jsonify({"ok": False, "error": "Missing bundle id."}), 400
             db.execute("DELETE FROM data_bundles WHERE id=?", (data["id"],))
             return jsonify({"ok": True})
 
@@ -330,8 +332,9 @@ def redispatch_order(order_id):
             "UPDATE orders SET status=?, gigzhub_order_id=?, gigzhub_error=NULL WHERE id=?",
             (status, gigzhub_id, order_id)
         )
-        # Credit reseller if this is the first successful dispatch
-        if order["store_id"] and order["profit_pesewas"] > 0:
+        # Only credit profit if the order was previously failed (not yet credited).
+        # If it was already dispatched once, profit was already credited by the webhook.
+        if order["store_id"] and order["profit_pesewas"] > 0 and order["status"] == "failed":
             store = db.execute(
                 "SELECT user_id FROM stores WHERE id=?", (order["store_id"],)
             ).fetchone()
@@ -507,7 +510,6 @@ def remove_site_logo():
 @admin_bp.route("/broadcast", methods=["POST"])
 @admin_required
 def broadcast():
-    """Send a push notification to all active resellers who have subscriptions."""
     config = current_app.config
     data  = request.get_json() or {}
     title = (data.get("title") or "").strip()
@@ -515,25 +517,37 @@ def broadcast():
     if not title or not body:
         return jsonify({"ok": False, "error": "Title and message are required."}), 400
 
+    # 1. Persist to broadcasts table so the notification bell picks it up
+    broadcast_id = str(uuid.uuid4())
+    try:
+        with global_db(config) as db:
+            db.execute(
+                "INSERT INTO broadcasts (id, title, body) VALUES (?,?,?)",
+                (broadcast_id, title, body),
+            )
+    except Exception as exc:
+        current_app.logger.exception("Broadcast DB error")
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+    # 2. Fire push notifications — best-effort, never blocks the response
+    sent = 0
     try:
         from ..services.push import _send_push_raw, _get_or_create_vapid, _build_claims
         from pywebpush import WebPushException
 
         vapid, _ = _get_or_create_vapid(config)
-        claims = _build_claims(config)
+        claims   = _build_claims(config)
+        icon     = "/static/icons/icon-192.png"
 
         with global_db(config) as db:
-            rows = db.execute(
+            subs = [dict(r) for r in db.execute(
                 """SELECT ps.id, ps.endpoint, ps.p256dh, ps.auth
                    FROM push_subscriptions ps
                    JOIN users u ON u.id = ps.user_id
                    WHERE u.role='reseller' AND u.is_active=1"""
-            ).fetchall()
-            subs = [dict(r) for r in rows]
+            ).fetchall()]
 
-        sent = 0
         stale_ids = []
-        icon = "/static/icons/icon-192.svg"
         for row in subs:
             sub = {"endpoint": row["endpoint"], "keys": {"p256dh": row["p256dh"], "auth": row["auth"]}}
             try:
@@ -548,15 +562,7 @@ def broadcast():
             with global_db(config) as db:
                 for sid in stale_ids:
                     db.execute("DELETE FROM push_subscriptions WHERE id=?", (sid,))
+    except Exception:
+        current_app.logger.exception("Broadcast push error (non-fatal)")
 
-        with global_db(config) as db:
-            db.execute(
-                "INSERT INTO broadcasts (id, title, body) VALUES (?,?,?)",
-                (str(uuid.uuid4()), title, body),
-            )
-
-        return jsonify({"ok": True, "sent_to": sent})
-
-    except Exception as exc:
-        current_app.logger.exception("Broadcast error")
-        return jsonify({"ok": False, "error": str(exc)}), 500
+    return jsonify({"ok": True, "sent_to": sent})
