@@ -91,8 +91,8 @@
                 </td>
                 <td class="td-date">{{ r['created_at'][:10] }}</td>
                 <td style="white-space:nowrap">
-                  <button class="btn btn-ghost btn-sm"
-                          onclick="openProfile({{ r|tojson }})">
+                  <button class="btn btn-ghost btn-sm view-btn"
+                          data-reseller="{{ r|tojson|e }}">
                     View
                   </button>
                   <button class="btn btn-ghost btn-sm toggle-btn"
@@ -185,6 +185,12 @@
   statusSel?.addEventListener('change', applyFilters);
 
   const NETWORKS = { mtn: 'MTN Mobile Money', telecel: 'Telecel Cash', airteltigo: 'AirtelTigo Money' };
+
+  document.querySelectorAll('.view-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      try { openProfile(JSON.parse(btn.dataset.reseller)); } catch(e) { console.error(e); }
+    });
+  });
 
   function openProfile(r) {
     document.getElementById('pd-name').textContent     = r.full_name || '—';
