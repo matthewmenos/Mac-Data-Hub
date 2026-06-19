@@ -228,12 +228,12 @@ def gigzhub_prices():
 def resellers():
     config = current_app.config
     with global_db_read(config) as db:
-        all_resellers = db.execute(
+        all_resellers = [dict(r) for r in db.execute(
             """SELECT u.*, s.slug, s.store_name,
                (SELECT COUNT(*) FROM orders o JOIN stores st ON st.id=o.store_id WHERE st.user_id=u.id) as order_count
                FROM users u LEFT JOIN stores s ON s.user_id = u.id
                WHERE u.role='reseller' ORDER BY u.created_at DESC"""
-        ).fetchall()
+        ).fetchall()]
         counts = {
             "total":    db.execute("SELECT COUNT(*) as c FROM users WHERE role='reseller'").fetchone()["c"],
             "active":   db.execute("SELECT COUNT(*) as c FROM users WHERE role='reseller' AND is_active=1").fetchone()["c"],

@@ -57,26 +57,28 @@
             <form id="payout-form" novalidate>
               <div class="form-row wallet-form-row">
                 <div class="field">
-                  <label for="payout-name">Account name</label>
-                  <input type="text" id="payout-name" name="account_name"
-                         placeholder="Your full name as on MoMo"
-                         value="{{ user['full_name'] }}" required />
+                  <label for="payout-network">Provider</label>
+                  <select id="payout-network" name="network" required>
+                    <option value="">Select provider</option>
+                    <option value="mtn" {% if user['momo_network']=='mtn' %}selected{% endif %}>MTN Mobile Money</option>
+                    <option value="telecel" {% if user['momo_network']=='telecel' %}selected{% endif %}>Telecel Cash</option>
+                    <option value="airteltigo" {% if user['momo_network']=='airteltigo' %}selected{% endif %}>AirtelTigo Money</option>
+                  </select>
                 </div>
                 <div class="field">
-                  <label for="payout-phone">Mobile money number</label>
+                  <label for="payout-phone">Account number</label>
                   <input type="tel" id="payout-phone" name="phone"
                          placeholder="0241 234 567"
                          value="{{ user['momo_number'] or '' }}" required autocomplete="tel" />
                   <span id="resolve-status" class="field-hint" style="display:none"></span>
                 </div>
                 <div class="field">
-                  <label for="payout-network">Network</label>
-                  <select id="payout-network" name="network" required>
-                    <option value="">Select network</option>
-                    <option value="mtn" {% if user['momo_network']=='mtn' %}selected{% endif %}>MTN Mobile Money</option>
-                    <option value="telecel" {% if user['momo_network']=='telecel' %}selected{% endif %}>Telecel Cash</option>
-                    <option value="airteltigo" {% if user['momo_network']=='airteltigo' %}selected{% endif %}>AirtelTigo Money</option>
-                  </select>
+                  <label for="payout-name">Account name</label>
+                  <input type="text" id="payout-name" name="account_name"
+                         placeholder="Enter your name"
+                         value="" readonly
+                         style="background:var(--surface-alt,#f3f4f6);color:var(--muted,#6b7280);cursor:default" />
+                  <span class="field-hint" id="name-hint">Will be filled automatically after verification.</span>
                 </div>
               </div>
               <div id="payout-error" class="form-error hidden"></div>

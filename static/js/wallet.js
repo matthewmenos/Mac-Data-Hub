@@ -17,14 +17,22 @@ function showPayoutForm() {
   const networkEl  = document.getElementById('payout-network');
   const nameEl     = document.getElementById('payout-name');
   const statusEl   = document.getElementById('resolve-status');
+  const nameHint   = document.getElementById('name-hint');
   let resolveTimer = null;
+
+  function setNameEditable(editable) {
+    nameEl.readOnly = !editable;
+    nameEl.style.background = editable ? '' : 'var(--surface-alt,#f3f4f6)';
+    nameEl.style.color      = editable ? '' : 'var(--muted,#6b7280)';
+    nameEl.style.cursor     = editable ? '' : 'default';
+  }
 
   function setResolveStatus(msg, type) {
     if (!statusEl) return;
     statusEl.textContent = msg;
     statusEl.style.display = msg ? '' : 'none';
     statusEl.style.color = type === 'ok'      ? 'var(--green)'
-                         : type === 'loading' ? 'var(--muted)'
+                         : type === 'loading' ? 'var(--muted,#6b7280)'
                          : '#ef4444';
   }
 
@@ -33,6 +41,9 @@ function showPayoutForm() {
     const network = networkEl.value;
     if (number.length < 10 || !network) return;
     setResolveStatus('Looking up account name…', 'loading');
+    nameEl.value = '';
+    setNameEditable(false);
+    if (nameHint) nameHint.style.display = '';
     try {
       const resp = await fetch(
         `/dashboard/wallet/resolve-account?number=${encodeURIComponent(number)}&network=${encodeURIComponent(network)}`
@@ -40,16 +51,29 @@ function showPayoutForm() {
       const data = await resp.json();
       if (data.ok && data.name) {
         nameEl.value = data.name;
-        setResolveStatus('✓ Name verified by Paystack', 'ok');
+        setNameEditable(false);
+        setResolveStatus('✓ Verified by Paystack', 'ok');
+        if (nameHint) nameHint.style.display = 'none';
       } else {
-        setResolveStatus(data.error || 'Could not verify — enter name manually.', 'err');
+        setNameEditable(true);
+        nameEl.focus();
+        setResolveStatus('Could not verify — enter your name manually.', 'err');
+        if (nameHint) nameHint.style.display = 'none';
       }
     } catch {
-      setResolveStatus('Could not verify — enter name manually.', 'err');
+      setNameEditable(true);
+      nameEl.focus();
+      setResolveStatus('Could not verify — enter your name manually.', 'err');
+      if (nameHint) nameHint.style.display = 'none';
     }
   }
 
   function scheduleResolve() {
+    // Reset name field whenever number or network changes
+    nameEl.value = '';
+    setNameEditable(false);
+    setResolveStatus('', '');
+    if (nameHint) nameHint.style.display = '';
     clearTimeout(resolveTimer);
     resolveTimer = setTimeout(tryResolve, 700);
   }
