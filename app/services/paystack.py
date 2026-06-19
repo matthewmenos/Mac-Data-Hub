@@ -67,7 +67,23 @@ def initiate_transfer(secret_key: str, amount_pesewas: int, recipient_code: str,
     }
     resp = requests.post(f"{PAYSTACK_BASE}/transfer",
                          json=payload, headers=_headers(secret_key), timeout=15)
-    resp.raise_for_status()
+    if not resp.ok:
+        msg = resp.json().get("message", resp.text) if resp.content else resp.reason
+        raise Exception(msg)
+    return resp.json()
+
+
+def resolve_account(secret_key: str, account_number: str, bank_code: str) -> dict:
+    """Resolve a mobile money number to an account name via Paystack."""
+    resp = requests.get(
+        f"{PAYSTACK_BASE}/bank/resolve",
+        params={"account_number": account_number, "bank_code": bank_code},
+        headers=_headers(secret_key),
+        timeout=10,
+    )
+    if not resp.ok:
+        msg = resp.json().get("message", resp.text) if resp.content else resp.reason
+        raise Exception(msg)
     return resp.json()
 
 
@@ -82,5 +98,7 @@ def create_transfer_recipient(secret_key: str, name: str, account_number: str,
     }
     resp = requests.post(f"{PAYSTACK_BASE}/transferrecipient",
                          json=payload, headers=_headers(secret_key), timeout=15)
-    resp.raise_for_status()
+    if not resp.ok:
+        msg = resp.json().get("message", resp.text) if resp.content else resp.reason
+        raise Exception(msg)
     return resp.json()

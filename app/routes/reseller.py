@@ -4,7 +4,7 @@ from flask import (Blueprint, render_template, request, redirect,
                    url_for, session, current_app, jsonify)
 from ..services.db import global_db, global_db_read, user_db, user_db_read
 from ..services.storage import upload_asset, delete_asset
-from ..services.paystack import create_transfer_recipient, initiate_transfer
+from ..services.paystack import create_transfer_recipient, initiate_transfer, resolve_account
 
 MOMO_BANK_CODES = {"mtn": "MTN", "telecel": "VDF", "airteltigo": "ATL"}
 
@@ -18,6 +18,8 @@ def reseller_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if session.get("role") != "reseller":
+            if request.is_json or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify({"error": "Session expired. Please log in again."}), 401
             return redirect(url_for("auth.login"))
         return f(*args, **kwargs)
     return decorated
@@ -191,6 +193,26 @@ def wallet():
                            withdrawals=[dict(r) for r in rows],
                            min_withdrawal=min_withdrawal,
                            withdrawal_fee_pct=withdrawal_fee_pct)
+
+
+@reseller_bp.route("/wallet/resolve-account")
+@reseller_required
+def resolve_account_name():
+    """Proxy to Paystack account resolve — keeps secret key server-side."""
+    config  = current_app.config
+    number  = request.args.get("number", "").strip()
+    network = request.args.get("network", "").strip().lower()
+    bank_code = MOMO_BANK_CODES.get(network)
+    if not number or not bank_code:
+        return jsonify({"ok": False, "error": "Number and network are required."}), 400
+    try:
+        result = resolve_account(config["PAYSTACK_SECRET_KEY"], number, bank_code)
+        name = result.get("data", {}).get("account_name", "")
+        if not name:
+            return jsonify({"ok": False, "error": "Could not resolve account name."}), 404
+        return jsonify({"ok": True, "name": name})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 502
 
 
 @reseller_bp.route("/wallet/setup-payout", methods=["POST"])

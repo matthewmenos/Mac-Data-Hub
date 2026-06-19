@@ -991,3 +991,40 @@
   .quick-actions-grid { grid-template-columns: 1fr; }
   .count-pill-num     { font-size: 1rem; }
 }
+
+/* ── Reseller profile drawer ─────────────────────────────── */
+.profile-drawer {
+  position: fixed; top: 0; right: 0; height: 100vh;
+  width: 360px; max-width: 100vw;
+  background: var(--surface, #fff);
+  box-shadow: -4px 0 32px rgba(0,0,0,.12);
+  display: flex; flex-direction: column;
+  transform: translateX(100%);
+  transition: transform .25s cubic-bezier(.4,0,.2,1);
+  z-index: 500; overflow: hidden;
+}
+.profile-drawer.open { transform: translateX(0); }
+.profile-drawer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  flex-shrink: 0;
+}
+.profile-drawer-title { font-size: 1rem; font-weight: 600; margin: 0; }
+.profile-drawer-body  { overflow-y: auto; padding: 1rem 1.25rem; flex: 1; }
+.pd-section           { margin-bottom: 1.5rem; }
+.pd-section-label {
+  font-size: .7rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted, #6b7280);
+  margin-bottom: .6rem;
+}
+.pd-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: .75rem; padding: .45rem 0;
+  border-bottom: 1px solid var(--border, #f3f4f6);
+  font-size: .85rem;
+}
+.pd-row:last-child { border-bottom: none; }
+.pd-key  { color: var(--muted, #6b7280); flex-shrink: 0; }
+.pd-val  { font-weight: 500; text-align: right; word-break: break-all; }
+.pd-mono { font-family: monospace; font-size: .78rem; }

@@ -12,6 +12,51 @@ function showPayoutForm() {
   const successEl = document.getElementById('payout-success');
   const btn       = document.getElementById('payout-btn');
 
+  // ── Auto-resolve account name ─────────────────────────────────────────────
+  const phoneEl    = document.getElementById('payout-phone');
+  const networkEl  = document.getElementById('payout-network');
+  const nameEl     = document.getElementById('payout-name');
+  const statusEl   = document.getElementById('resolve-status');
+  let resolveTimer = null;
+
+  function setResolveStatus(msg, type) {
+    if (!statusEl) return;
+    statusEl.textContent = msg;
+    statusEl.style.display = msg ? '' : 'none';
+    statusEl.style.color = type === 'ok'      ? 'var(--green)'
+                         : type === 'loading' ? 'var(--muted)'
+                         : '#ef4444';
+  }
+
+  async function tryResolve() {
+    const number  = phoneEl.value.trim();
+    const network = networkEl.value;
+    if (number.length < 10 || !network) return;
+    setResolveStatus('Looking up account name…', 'loading');
+    try {
+      const resp = await fetch(
+        `/dashboard/wallet/resolve-account?number=${encodeURIComponent(number)}&network=${encodeURIComponent(network)}`
+      );
+      const data = await resp.json();
+      if (data.ok && data.name) {
+        nameEl.value = data.name;
+        setResolveStatus('✓ Name verified by Paystack', 'ok');
+      } else {
+        setResolveStatus(data.error || 'Could not verify — enter name manually.', 'err');
+      }
+    } catch {
+      setResolveStatus('Could not verify — enter name manually.', 'err');
+    }
+  }
+
+  function scheduleResolve() {
+    clearTimeout(resolveTimer);
+    resolveTimer = setTimeout(tryResolve, 700);
+  }
+
+  if (phoneEl)   phoneEl.addEventListener('input', scheduleResolve);
+  if (networkEl) networkEl.addEventListener('change', scheduleResolve);
+
   form.addEventListener('submit', async e => {
     e.preventDefault();
     errEl.classList.add('hidden');
