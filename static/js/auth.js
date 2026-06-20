@@ -27,14 +27,15 @@ function togglePw(id, btn) {
       return;
     }
 
-    var username = document.getElementById('username').value.trim().toLowerCase();
-    if (username.includes(' ')) {
-      errEl.textContent = 'Username cannot contain spaces.';
+    var usernameEl = document.getElementById('username');
+    var username = usernameEl ? usernameEl.value.replace(/\s/g, '').toLowerCase() : '';
+    if (!username) {
+      errEl.textContent = 'Username is required.';
       errEl.classList.remove('hidden');
       return;
     }
-    if (!/^[a-z0-9][a-z0-9_-]{1,28}[a-z0-9]$/.test(username)) {
-      errEl.textContent = 'Username must be 3–30 characters, start and end with a letter or number.';
+    if (!/^[a-z0-9][a-z0-9_-]{1,28}[a-z0-9]$/.test(username) && !/^[a-z0-9]{3}$/.test(username)) {
+      errEl.textContent = 'Username must be 3–30 characters, start and end with a letter or number, no spaces.';
       errEl.classList.remove('hidden');
       return;
     }

@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from ..services.db import global_db, global_db_read
 from ..services.paystack import initialize_transaction
 
-_USERNAME_RE = re.compile(r'^[a-z0-9][a-z0-9_-]{1,28}[a-z0-9]$')
+_USERNAME_RE = re.compile(r'^[a-z0-9][a-z0-9_-]{1,28}[a-z0-9]$|^[a-z0-9]{3}$')
 
 auth_bp = Blueprint("auth", __name__)
 
