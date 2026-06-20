@@ -2,6 +2,7 @@ import uuid
 from functools import wraps
 from flask import (Blueprint, render_template, request, redirect,
                    url_for, session, current_app, jsonify)
+from werkzeug.security import check_password_hash, generate_password_hash
 from ..services.db import global_db, global_db_read, user_db, user_db_read
 from ..services.storage import upload_asset, delete_asset
 from ..services.paystack import create_transfer_recipient, initiate_transfer, resolve_account
@@ -330,6 +331,67 @@ def withdraw():
         "ok": True,
         "message": f"GHS {payout_pesewas/100:.2f} is on its way to {user['momo_number']}{fee_msg}."
     })
+
+
+@reseller_bp.route("/account", methods=["GET"])
+@reseller_required
+def account_settings():
+    config = current_app.config
+    uid, user, store = _ctx(config)
+    return render_template("reseller/account.html", user=user, store=store)
+
+
+@reseller_bp.route("/account/change-username", methods=["POST"])
+@reseller_required
+def change_username():
+    import re
+    config = current_app.config
+    uid  = session["user_id"]
+    data = request.get_json() or {}
+    username = data.get("username", "").strip().lower()
+
+    if not username:
+        return jsonify({"error": "Username is required."}), 400
+    pattern = re.compile(r'^[a-z0-9][a-z0-9_-]{1,28}[a-z0-9]$|^[a-z0-9]{3}$')
+    if not pattern.match(username) or re.search(r'[_-]{2,}', username):
+        return jsonify({"error": "Username must be 3–30 characters, start and end with a letter or number, no consecutive - or _."}), 400
+
+    with global_db(config) as db:
+        existing = db.execute(
+            "SELECT id FROM users WHERE username=? AND id!=?", (username, uid)
+        ).fetchone()
+        if existing:
+            return jsonify({"error": "Username already taken."}), 400
+        db.execute("UPDATE users SET username=? WHERE id=?", (username, uid))
+    return jsonify({"ok": True, "message": "Username updated successfully.", "username": username})
+
+
+@reseller_bp.route("/account/change-password", methods=["POST"])
+@reseller_required
+def change_password():
+    config = current_app.config
+    uid = session["user_id"]
+    data = request.get_json() or {}
+    current_pw  = data.get("current_password", "")
+    new_pw      = data.get("new_password", "").strip()
+    confirm_pw  = data.get("confirm_password", "").strip()
+
+    if not current_pw or not new_pw or not confirm_pw:
+        return jsonify({"error": "All fields are required."}), 400
+    if new_pw != confirm_pw:
+        return jsonify({"error": "New passwords do not match."}), 400
+    if len(new_pw) < 8:
+        return jsonify({"error": "Password must be at least 8 characters."}), 400
+
+    with global_db(config) as db:
+        user = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
+        if not check_password_hash(user["password_hash"], current_pw):
+            return jsonify({"error": "Current password is incorrect."}), 400
+        db.execute(
+            "UPDATE users SET password_hash=? WHERE id=?",
+            (generate_password_hash(new_pw), uid)
+        )
+    return jsonify({"ok": True, "message": "Password changed successfully."})
 
 
 @reseller_bp.route("/store", methods=["GET", "POST"])
