@@ -1,23 +1,56 @@
 // ── Cache version — bump this string to invalidate all caches on next deploy ──
-const VERSION = 'v4';
+const VERSION = 'v5';
 
 const STATIC_CACHE  = `mdh-static-${VERSION}`;
 const DYNAMIC_CACHE = `mdh-dynamic-${VERSION}`;
+const IMAGE_CACHE   = `mdh-images-${VERSION}`;
 
-// Pre-cached app shell — everything a reseller/admin needs without hitting the network
+// Pre-cached app shell — everything needed for offline/PWA launch
 const STATIC_ASSETS = [
+  // Offline fallback
   '/offline',
+
+  // Core CSS
   '/static/css/base.css',
   '/static/css/dashboard.css',
+
+  // Core JS
   '/static/js/main.js',
+  '/static/js/auth.js',
+  '/static/js/wallet.js',
+
+  // PWA manifest
+  '/static/manifest.json',
+
+  // Favicon
+  '/static/favicon.ico',
+  '/static/icons/favicon-16.png',
+  '/static/icons/favicon-32.png',
+
+  // All PWA icons
+  '/static/icons/icon-72.png',
+  '/static/icons/icon-96.png',
+  '/static/icons/icon-128.png',
+  '/static/icons/icon-144.png',
+  '/static/icons/icon-152.png',
   '/static/icons/icon-192.png',
+  '/static/icons/icon-384.png',
   '/static/icons/icon-512.png',
+
+  // Key pages — cached on install so they load offline
+  '/',
+  '/login',
+  '/apply',
+  '/dashboard',
+  '/dashboard/orders',
+  '/dashboard/wallet',
+  '/dashboard/store',
+  '/dashboard/account',
+  '/dashboard/pricing',
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-// Strip query strings when caching static assets so ?v=123 busting params
-// don't create duplicate cache entries for the same file.
 function staticCacheKey(request) {
   const url = new URL(request.url);
   url.search = '';
@@ -29,17 +62,24 @@ function isStaticAsset(url) {
   return p.startsWith('/static/') || p === '/offline';
 }
 
-// Routes that must always go to the network — never cache responses here
+function isImageAsset(url) {
+  return /\.(png|jpg|jpeg|webp|svg|gif|ico)$/i.test(url.pathname);
+}
+
+// Routes that must always go to the network — never serve stale data here
 function isNetworkOnly(url) {
+  const p = url.pathname;
   return (
-    url.pathname.startsWith('/push/') ||
-    url.pathname.startsWith('/checkout') ||
-    url.pathname.startsWith('/verify-payment') ||
-    url.pathname.startsWith('/track') ||
-    url.pathname.startsWith('/auth/') ||
-    url.pathname.startsWith('/admin/') ||
-    url.pathname.startsWith('/dashboard/notifications') ||
-    url.pathname.startsWith('/webhook/')
+    p.startsWith('/push/') ||
+    p.startsWith('/checkout') ||
+    p.startsWith('/verify-payment') ||
+    p.startsWith('/track') ||
+    p.startsWith('/logout') ||
+    p.startsWith('/auth/') ||
+    p.startsWith('/admin/') ||
+    p.startsWith('/dashboard/notifications') ||
+    p.startsWith('/dashboard/wallet/resolve-account') ||
+    p.startsWith('/webhook/')
   );
 }
 
@@ -53,18 +93,28 @@ function trimCache(cacheName, maxItems) {
   );
 }
 
-// ── Install: pre-cache the app shell ──────────────────────────────────────────
+// ── Install: pre-cache the full app shell ─────────────────────────────────────
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(STATIC_CACHE)
-      .then(c => c.addAll(STATIC_ASSETS))
+      .then(cache =>
+        // addAll fails if any URL errors; use individual puts so one 404 doesn't
+        // break the whole install (e.g. dashboard pages require auth)
+        Promise.allSettled(
+          STATIC_ASSETS.map(url =>
+            fetch(url, { credentials: 'include' })
+              .then(resp => { if (resp.ok || resp.status === 0) cache.put(url, resp); })
+              .catch(() => {})
+          )
+        )
+      )
       .then(() => self.skipWaiting())
   );
 });
 
 // ── Activate: purge all stale caches from old versions ────────────────────────
 self.addEventListener('activate', e => {
-  const keep = new Set([STATIC_CACHE, DYNAMIC_CACHE]);
+  const keep = new Set([STATIC_CACHE, DYNAMIC_CACHE, IMAGE_CACHE]);
   e.waitUntil(
     caches.keys()
       .then(keys => Promise.all(keys.filter(k => !keep.has(k)).map(k => caches.delete(k))))
@@ -81,13 +131,13 @@ self.addEventListener('fetch', e => {
   // Never intercept cross-origin requests (Paystack, Google Fonts, CDNs, etc.)
   if (url.origin !== self.location.origin) return;
 
-  // Network-only routes — no caching, always live
+  // Network-only routes — always live, no caching
   if (isNetworkOnly(url)) {
     e.respondWith(fetch(e.request));
     return;
   }
 
-  // Static assets — cache-first, update in background if stale
+  // Static assets — cache-first, update in background
   if (isStaticAsset(url)) {
     const key = staticCacheKey(e.request);
     e.respondWith(
@@ -96,9 +146,27 @@ self.addEventListener('fetch', e => {
           const networkFetch = fetch(e.request).then(resp => {
             if (resp.ok) cache.put(key, resp.clone());
             return resp;
-          });
-          // Return cache immediately; fetch runs in background to keep it fresh
+          }).catch(() => cached);
           return cached || networkFetch;
+        })
+      )
+    );
+    return;
+  }
+
+  // Images — cache-first with dedicated image cache (longer-lived)
+  if (isImageAsset(url)) {
+    e.respondWith(
+      caches.open(IMAGE_CACHE).then(cache =>
+        cache.match(e.request).then(cached => {
+          if (cached) return cached;
+          return fetch(e.request).then(resp => {
+            if (resp.ok) {
+              cache.put(e.request, resp.clone());
+              trimCache(IMAGE_CACHE, 60);
+            }
+            return resp;
+          }).catch(() => cached);
         })
       )
     );
@@ -110,11 +178,13 @@ self.addEventListener('fetch', e => {
     e.respondWith(
       fetch(e.request)
         .then(resp => {
-          const clone = resp.clone();
-          caches.open(DYNAMIC_CACHE).then(c => {
-            c.put(e.request, clone);
-            trimCache(DYNAMIC_CACHE, 25);
-          });
+          if (resp.ok) {
+            const clone = resp.clone();
+            caches.open(DYNAMIC_CACHE).then(c => {
+              c.put(e.request, clone);
+              trimCache(DYNAMIC_CACHE, 50);
+            });
+          }
           return resp;
         })
         .catch(() =>
@@ -132,10 +202,10 @@ self.addEventListener('fetch', e => {
         const fetchPromise = fetch(e.request).then(resp => {
           if (resp.ok) {
             cache.put(e.request, resp.clone());
-            trimCache(DYNAMIC_CACHE, 40);
+            trimCache(DYNAMIC_CACHE, 60);
           }
           return resp;
-        });
+        }).catch(() => cached);
         return cached || fetchPromise;
       })
     )
@@ -160,7 +230,6 @@ self.addEventListener('push', e => {
     try { data = { ...data, ...JSON.parse(e.data.text()) }; } catch (_) {}
   }
 
-  // Broadcasts get their own tag so they don't replace order notifications
   const tag = data.type === 'broadcast' ? 'mdh-broadcast' : 'mdh-order';
 
   e.waitUntil(
