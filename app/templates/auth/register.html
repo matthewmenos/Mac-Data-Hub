@@ -129,10 +129,10 @@
           <div class="input-prefix-wrap">
             <span class="input-prefix">@</span>
             <input type="text" id="username" name="username" placeholder="kwame_data"
-                   required pattern="[a-z0-9_\-]{3,30}" autocomplete="username"
-                   oninput="this.value=this.value.toLowerCase()" />
+                   required pattern="[a-z0-9][a-z0-9_\-]{1,28}[a-z0-9]" autocomplete="username"
+                   oninput="this.value=this.value.replace(/\s/g,'').toLowerCase()" />
           </div>
-          <span class="field-hint">3–30 characters: letters, numbers, hyphens, underscores. Used to log in.</span>
+          <span class="field-hint">3–30 chars · letters &amp; numbers only at start/end · no spaces · no consecutive - or _</span>
         </div>
 
         <div class="field">

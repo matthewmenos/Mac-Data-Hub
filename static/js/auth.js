@@ -28,8 +28,18 @@ function togglePw(id, btn) {
     }
 
     var username = document.getElementById('username').value.trim().toLowerCase();
-    if (!/^[a-z0-9_-]{3,30}$/.test(username)) {
-      errEl.textContent = 'Username must be 3–30 characters: letters, numbers, hyphens, underscores only.';
+    if (username.includes(' ')) {
+      errEl.textContent = 'Username cannot contain spaces.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    if (!/^[a-z0-9][a-z0-9_-]{1,28}[a-z0-9]$/.test(username)) {
+      errEl.textContent = 'Username must be 3–30 characters, start and end with a letter or number.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    if (/[_-]{2,}/.test(username)) {
+      errEl.textContent = 'Username cannot have consecutive hyphens or underscores (e.g. -- or __).';
       errEl.classList.remove('hidden');
       return;
     }

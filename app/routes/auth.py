@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from ..services.db import global_db, global_db_read
 from ..services.paystack import initialize_transaction
 
-_USERNAME_RE = re.compile(r'^[a-z0-9_-]{3,30}$')
+_USERNAME_RE = re.compile(r'^[a-z0-9][a-z0-9_-]{1,28}[a-z0-9]$')
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -89,8 +89,8 @@ def register():
     if missing:
         return jsonify({"error": f"Missing: {', '.join(missing)}."}), 400
 
-    if not _USERNAME_RE.match(username):
-        return jsonify({"error": "Username must be 3–30 characters: letters, numbers, hyphens, underscores only."}), 400
+    if not _USERNAME_RE.match(username) or re.search(r'[_-]{2,}', username):
+        return jsonify({"error": "Username must be 3–30 characters, start and end with a letter or number, and cannot have consecutive hyphens or underscores."}), 400
 
     if len(password) < 8:
         return jsonify({"error": "Password must be at least 8 characters."}), 400
