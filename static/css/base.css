@@ -266,6 +266,30 @@ body.dash-page .main-content { min-height: 100vh; padding-top: 0; }
 .footer-col-title { font-weight: 700; color: #e2e8f0; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; margin-bottom: .3rem; }
 .footer-col a       { color: #94a3b8; font-size: .875rem; transition: color var(--transition); }
 .footer-col a:hover { color: #f1f5f9; text-decoration: none; }
+/* ── Footer app download banner ──────────────────────────── */
+.footer-app-banner {
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: 1.25rem;
+  padding: 1.5rem 1rem;
+  border-top: 1px solid rgba(255,255,255,.06);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.footer-app-banner-text  { display: flex; flex-direction: column; gap: .2rem; text-align: center; }
+.footer-app-banner-title { font-size: .95rem; font-weight: 700; color: #f1f5f9; }
+.footer-app-banner-sub   { font-size: .8rem; color: #94a3b8; }
+.footer-app-badges { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+.footer-badge-link { display: inline-block; }
+.footer-badge-img  { height: 48px; width: auto; display: block; }
+.footer-apk-link {
+  display: inline-flex; align-items: center; gap: .4rem;
+  font-size: .8rem; color: #94a3b8;
+  border: 1px solid rgba(255,255,255,.12);
+  padding: .45rem .9rem; border-radius: 6px;
+  transition: color var(--transition), border-color var(--transition);
+  text-decoration: none;
+}
+.footer-apk-link:hover { color: #f1f5f9; border-color: rgba(255,255,255,.3); text-decoration: none; }
+
 .footer-bottom { border-top: 1px solid rgba(255,255,255,.06); padding: 1.1rem 0; font-size: .775rem; color: #64748b; }
 .footer-bottom .container { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: .75rem; text-align: center; }
 

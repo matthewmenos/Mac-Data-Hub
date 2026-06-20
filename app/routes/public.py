@@ -34,6 +34,17 @@ def assetlinks():
     return resp
 
 
+@public_bp.route("/download/apk")
+def download_apk():
+    """Serve the Mac Data Hub Android APK."""
+    static_dir = os.path.join(current_app.root_path, "..", "static")
+    return send_from_directory(
+        os.path.abspath(static_dir), "macdatahub.apk",
+        as_attachment=True,
+        download_name="MacDataHub.apk"
+    )
+
+
 @public_bp.route("/sw.js")
 def service_worker():
     """Serve SW from root so it has scope over the whole origin."""
