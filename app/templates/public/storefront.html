@@ -184,5 +184,5 @@ window.PAYSTACK_PUBLIC_KEY = "{{ config['PAYSTACK_PUBLIC_KEY'] }}";
 {% block scripts %}
 <script src="/static/js/home.js"></script>
 <script src="/static/js/track.js"></script>
-<script src="/static/js/help-fab.js"></script>
+<script src="{{ static_v('js/help-fab.js') }}"></script>
 {% endblock %}

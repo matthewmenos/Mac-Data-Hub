@@ -10,15 +10,6 @@ const STATIC_ASSETS = [
   // Offline fallback
   '/offline',
 
-  // Core CSS
-  '/static/css/base.css',
-  '/static/css/dashboard.css',
-
-  // Core JS
-  '/static/js/main.js',
-  '/static/js/auth.js',
-  '/static/js/wallet.js',
-
   // PWA manifest
   '/static/manifest.json',
 

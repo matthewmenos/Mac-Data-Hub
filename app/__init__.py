@@ -1,7 +1,19 @@
+import os
+import hashlib
 from datetime import datetime
 from flask import Flask, render_template, request, session
 from .config import Config
 from .services.db import init_global_db, global_db_read
+
+
+def _static_hash(app, rel_path):
+    """Return a short content-hash query string for a static file, e.g. ?h=a1b2c3d4"""
+    try:
+        full = os.path.join(app.static_folder, rel_path.lstrip("/static/"))
+        with open(full, "rb") as f:
+            return hashlib.md5(f.read()).hexdigest()[:8]
+    except Exception:
+        return "0"
 
 
 def create_app():
@@ -35,9 +47,24 @@ def create_app():
     except Exception:
         pass  # On first boot, app_settings may not have these keys yet
 
+    # Pre-compute hashes once at startup for JS/CSS files that change with deploys
+    _hashes = {
+        p: _static_hash(app, p)
+        for p in [
+            "js/auth.js", "js/main.js", "js/wallet.js",
+            "js/help-fab.js", "css/base.css", "css/dashboard.css",
+        ]
+    }
+
+    def static_v(rel):
+        """Usage in templates: {{ static_v('js/auth.js') }} → /static/js/auth.js?h=abc12345"""
+        h = _hashes.get(rel, "0")
+        return f"/static/{rel}?h={h}"
+
     @app.context_processor
     def inject_globals():
         ctx = {
+            "static_v": static_v,
             "now": datetime.utcnow(),
             "config": app.config,
             "request": request,
