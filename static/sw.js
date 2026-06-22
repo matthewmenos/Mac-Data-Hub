@@ -1,5 +1,5 @@
 // ── Cache version — bump this string to invalidate all caches on next deploy ──
-const VERSION = 'v5';
+const VERSION = 'v6';
 
 const STATIC_CACHE  = `mdh-static-${VERSION}`;
 const DYNAMIC_CACHE = `mdh-dynamic-${VERSION}`;
@@ -37,16 +37,9 @@ const STATIC_ASSETS = [
   '/static/icons/icon-384.png',
   '/static/icons/icon-512.png',
 
-  // Key pages — cached on install so they load offline
+  // Public pages only — auth/dashboard are network-only (always fresh)
   '/',
-  '/login',
   '/apply',
-  '/dashboard',
-  '/dashboard/orders',
-  '/dashboard/wallet',
-  '/dashboard/store',
-  '/dashboard/account',
-  '/dashboard/pricing',
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -75,10 +68,11 @@ function isNetworkOnly(url) {
     p.startsWith('/verify-payment') ||
     p.startsWith('/track') ||
     p.startsWith('/logout') ||
+    p.startsWith('/login') ||
+    p.startsWith('/register') ||
     p.startsWith('/auth/') ||
     p.startsWith('/admin/') ||
-    p.startsWith('/dashboard/notifications') ||
-    p.startsWith('/dashboard/wallet/resolve-account') ||
+    p.startsWith('/dashboard/') ||
     p.startsWith('/webhook/')
   );
 }
