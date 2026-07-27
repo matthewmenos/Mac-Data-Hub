@@ -2,7 +2,38 @@
 import json
 from py_vapid import Vapid
 from pywebpush import webpush, WebPushException
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
 from .db import global_db
+
+
+def _generate_vapid_keypair() -> tuple[str, str]:
+    """Generate a VAPID key pair using cryptography directly.
+    
+    Returns (private_pem_str, public_b64_str).
+    This bypasses the deprecated py_vapid generate_keys() which
+    fails with newer cryptography versions.
+    """
+    private_key = ec.generate_private_key(ec.SECP256R1())
+    # Export private key in PEM format
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode()
+    # Export public key in PEM format
+    public_pem = private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    ).decode()
+    # py_vapid expects a base64-encoded uncompressed EC point for browser subscription
+    import base64
+    raw = private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.X962,
+        format=serialization.PublicFormat.UncompressedPoint,
+    )
+    public_b64 = base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
+    return private_pem, public_b64
 
 
 def _get_or_create_vapid(config) -> tuple[Vapid, str]:
@@ -22,10 +53,8 @@ def _get_or_create_vapid(config) -> tuple[Vapid, str]:
             return vapid, pub_val
 
         # Generate fresh VAPID key pair — purge stale subscriptions since they used the old key
-        vapid = Vapid()
-        vapid.generate_keys()
-        private_pem = vapid.private_pem().decode()
-        public_b64  = vapid.public_pem().decode()
+        private_pem, public_b64 = _generate_vapid_keypair()
+        vapid = Vapid.from_pem(private_pem.encode())
 
         db.execute(
             "INSERT OR REPLACE INTO app_settings (key, value) VALUES ('vapid_private_key', ?)",
