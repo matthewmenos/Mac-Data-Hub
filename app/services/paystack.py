@@ -68,7 +68,13 @@ def initiate_transfer(secret_key: str, amount_pesewas: int, recipient_code: str,
     resp = requests.post(f"{PAYSTACK_BASE}/transfer",
                          json=payload, headers=_headers(secret_key), timeout=15)
     if not resp.ok:
-        msg = resp.json().get("message", resp.text) if resp.content else resp.reason
+        # Paystack may return HTML error pages instead of JSON
+        try:
+            error_data = resp.json()
+            msg = error_data.get("message", resp.text)
+        except ValueError:
+            # Response is not JSON (likely HTML error page)
+            msg = f"Paystack API error (HTTP {resp.status_code})"
         raise Exception(msg)
     return resp.json()
 
@@ -82,7 +88,13 @@ def resolve_account(secret_key: str, account_number: str, bank_code: str) -> dic
         timeout=10,
     )
     if not resp.ok:
-        msg = resp.json().get("message", resp.text) if resp.content else resp.reason
+        # Paystack may return HTML error pages instead of JSON
+        try:
+            error_data = resp.json()
+            msg = error_data.get("message", resp.text)
+        except ValueError:
+            # Response is not JSON (likely HTML error page)
+            msg = f"Paystack API error (HTTP {resp.status_code})"
         raise Exception(msg)
     return resp.json()
 
@@ -99,6 +111,12 @@ def create_transfer_recipient(secret_key: str, name: str, account_number: str,
     resp = requests.post(f"{PAYSTACK_BASE}/transferrecipient",
                          json=payload, headers=_headers(secret_key), timeout=15)
     if not resp.ok:
-        msg = resp.json().get("message", resp.text) if resp.content else resp.reason
+        # Paystack may return HTML error pages instead of JSON
+        try:
+            error_data = resp.json()
+            msg = error_data.get("message", resp.text)
+        except ValueError:
+            # Response is not JSON (likely HTML error page)
+            msg = f"Paystack API error (HTTP {resp.status_code})"
         raise Exception(msg)
     return resp.json()

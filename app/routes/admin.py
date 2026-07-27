@@ -16,6 +16,8 @@ def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if session.get("role") != "admin":
+            if request.is_json or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify({"error": "Session expired. Please log in again."}), 401
             return redirect(url_for("auth.login"))
         return f(*args, **kwargs)
     return decorated
