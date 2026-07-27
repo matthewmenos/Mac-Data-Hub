@@ -379,26 +379,41 @@ def withdrawals():
                 if payout_pesewas <= 0:
                     return jsonify({"ok": False, "error": "Amount too small after fee deduction."}), 400
                 
-                # Update status to processing
+                # Generate a unique reference for this transfer attempt
+                # Use a UUID suffix to ensure uniqueness even on retry
+                unique_ref = f"WD-{uuid.uuid4().hex[:8].upper()}"
+                
+                # Update status to processing with the new reference
                 db.execute(
-                    "UPDATE wallet_withdrawals SET status='processing' WHERE id=?",
-                    (wd_id,)
+                    "UPDATE wallet_withdrawals SET status='processing', paystack_transfer_code=? WHERE id=?",
+                    (unique_ref, wd_id)
                 )
                 
                 # Initiate Paystack transfer
                 try:
                     from ..services.paystack import initiate_transfer
-                    initiate_transfer(
+                    result = initiate_transfer(
                         config["PAYSTACK_SECRET_KEY"],
                         payout_pesewas,
                         user["payout_recipient_code"],
-                        wd["paystack_transfer_code"],
+                        unique_ref,
                         reason="Mac Data Hub wallet withdrawal"
                     )
+                    # Save the Paystack transfer code from the response
+                    paystack_code = result.get("data", {}).get("transfer_code", "")
+                    if paystack_code:
+                        db.execute(
+                            "UPDATE wallet_withdrawals SET paystack_transfer_code=? WHERE id=?",
+                            (paystack_code, wd_id)
+                        )
                     return jsonify({"ok": True, "message": "Transfer initiated successfully."})
                 except Exception as exc:
-                    # If transfer fails, keep as processing (webhook will handle it)
-                    # or mark as failed immediately
+                    err_msg = str(exc)
+                    # Log the error for debugging
+                    current_app.logger.error(
+                        "Paystack transfer failed for withdrawal %s: %s", wd_id, err_msg
+                    )
+                    # If transfer fails, mark as failed and refund the balance
                     db.execute(
                         "UPDATE wallet_withdrawals SET status='failed' WHERE id=?",
                         (wd_id,)
@@ -408,7 +423,16 @@ def withdrawals():
                         "UPDATE users SET wallet_pesewas = wallet_pesewas + ? WHERE id=?",
                         (wd["amount_pesewas"], wd["user_id"])
                     )
-                    return jsonify({"ok": False, "error": f"Transfer failed: {str(exc)}"}), 502
+                    
+                    # Provide a user-friendly error message
+                    if "insufficient" in err_msg.lower():
+                        friendly_msg = "Paystack wallet balance is insufficient. Please fund your Paystack wallet and try again."
+                    elif "duplicate" in err_msg.lower() or "reference" in err_msg.lower():
+                        friendly_msg = "Duplicate transfer reference. Please try again."
+                    else:
+                        friendly_msg = err_msg
+                    
+                    return jsonify({"ok": False, "error": friendly_msg}), 502
             
             elif new_status == "failed":
                 # Admin rejected - refund balance and mark as failed
