@@ -338,10 +338,102 @@ def redispatch_order(order_id):
     return jsonify({"ok": True, "gigzhub_id": gigzhub_id})
 
 
-@admin_bp.route("/withdrawals")
+@admin_bp.route("/withdrawals", methods=["GET", "POST"])
 @admin_required
 def withdrawals():
     config = current_app.config
+    
+    if request.method == "POST":
+        data = request.get_json() or {}
+        wd_id = data.get("id")
+        new_status = data.get("status")
+        
+        if not wd_id or new_status not in ("approved", "failed"):
+            return jsonify({"ok": False, "error": "Invalid request."}), 400
+        
+        with global_db(config) as db:
+            wd = db.execute(
+                "SELECT * FROM wallet_withdrawals WHERE id=?",
+                (wd_id,)
+            ).fetchone()
+            
+            if not wd:
+                return jsonify({"ok": False, "error": "Withdrawal not found."}), 404
+            
+            if wd["status"] != "pending":
+                return jsonify({"ok": False, "error": f"Withdrawal is already {wd['status']}."}), 400
+            
+            if new_status == "approved":
+                # Mark as processing and initiate Paystack transfer
+                user = db.execute("SELECT * FROM users WHERE id=?", (wd["user_id"],)).fetchone()
+                
+                if not user or not user["payout_recipient_code"]:
+                    return jsonify({"ok": False, "error": "Reseller has no payout profile."}), 400
+                
+                # Calculate net amount (already stored in DB with fee deducted)
+                fee_pesewas = wd.get("fee_pesewas", 0)
+                payout_pesewas = wd["amount_pesewas"] - fee_pesewas
+                
+                if payout_pesewas <= 0:
+                    return jsonify({"ok": False, "error": "Amount too small after fee deduction."}), 400
+                
+                # Update status to processing
+                db.execute(
+                    "UPDATE wallet_withdrawals SET status='processing' WHERE id=?",
+                    (wd_id,)
+                )
+                
+                # Initiate Paystack transfer
+                try:
+                    from ..services.paystack import initiate_transfer
+                    initiate_transfer(
+                        config["PAYSTACK_SECRET_KEY"],
+                        payout_pesewas,
+                        user["payout_recipient_code"],
+                        wd["paystack_transfer_code"],
+                        reason="Mac Data Hub wallet withdrawal"
+                    )
+                    return jsonify({"ok": True, "message": "Transfer initiated successfully."})
+                except Exception as exc:
+                    # If transfer fails, keep as processing (webhook will handle it)
+                    # or mark as failed immediately
+                    db.execute(
+                        "UPDATE wallet_withdrawals SET status='failed' WHERE id=?",
+                        (wd_id,)
+                    )
+                    # Refund the balance
+                    db.execute(
+                        "UPDATE users SET wallet_pesewas = wallet_pesewas + ? WHERE id=?",
+                        (wd["amount_pesewas"], wd["user_id"])
+                    )
+                    return jsonify({"ok": False, "error": f"Transfer failed: {str(exc)}"}), 502
+            
+            elif new_status == "failed":
+                # Admin rejected - refund balance and mark as failed
+                db.execute(
+                    "UPDATE wallet_withdrawals SET status='failed' WHERE id=?",
+                    (wd_id,)
+                )
+                db.execute(
+                    "UPDATE users SET wallet_pesewas = wallet_pesewas + ? WHERE id=?",
+                    (wd["amount_pesewas"], wd["user_id"])
+                )
+                
+                # Notify reseller
+                try:
+                    from ..services.push import broadcast_push
+                    broadcast_push(
+                        config, wd["user_id"],
+                        "Withdrawal rejected",
+                        f"Your GHS {wd['amount_pesewas']/100:.2f} withdrawal was rejected. Your balance has been restored.",
+                        "/dashboard/wallet"
+                    )
+                except Exception:
+                    pass
+                
+                return jsonify({"ok": True, "message": "Withdrawal rejected and balance refunded."})
+    
+    # GET request - show the page
     with global_db_read(config) as db:
         all_wd = db.execute(
             """SELECT w.*, u.full_name, u.email, u.phone

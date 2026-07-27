@@ -300,36 +300,16 @@ def withdraw():
         db.execute(
             """INSERT INTO wallet_withdrawals
                (id, user_id, amount_pesewas, fee_pesewas, mobile_number, network, status, paystack_transfer_code)
-               VALUES (?,?,?,?,?,?,'processing',?)""",
+               VALUES (?,?,?,?,?,?,'pending',?)""",
             (wd_id, uid, amount_pesewas, fee_pesewas,
              user["momo_number"], user["momo_network"], reference)
         )
 
-    # Transfer only the net amount (after fee) via Paystack
-    try:
-        initiate_transfer(
-            config["PAYSTACK_SECRET_KEY"],
-            payout_pesewas,
-            user["payout_recipient_code"],
-            reference,
-            reason="Mac Data Hub wallet withdrawal"
-        )
-    except Exception as exc:
-        with global_db(config) as db:
-            db.execute(
-                "UPDATE users SET wallet_pesewas = wallet_pesewas + ? WHERE id=?",
-                (amount_pesewas, uid)
-            )
-            db.execute(
-                "UPDATE wallet_withdrawals SET status='failed' WHERE id=?",
-                (wd_id,)
-            )
-        return jsonify({"error": f"Transfer failed. Your balance has been restored. ({exc})"}), 502
-
+    # Return success - transfer will be initiated when admin approves
     fee_msg = f" (fee: GHS {fee_pesewas/100:.2f})" if fee_pesewas else ""
     return jsonify({
         "ok": True,
-        "message": f"GHS {payout_pesewas/100:.2f} is on its way to {user['momo_number']}{fee_msg}."
+        "message": f"Withdrawal request submitted. GHS {payout_pesewas/100:.2f} will be sent to {user['momo_number']} after admin approval.{fee_msg}"
     })
 
 

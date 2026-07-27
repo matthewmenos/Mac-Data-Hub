@@ -90,6 +90,12 @@
                 <td><span class="net-badge net-{{ w['network'] }}">{{ w['network']|upper }}</span></td>
                 <td><span class="status-pill status-{{ w['status'] }}">{{ w['status'] }}</span></td>
                 <td class="td-date">{{ w['created_at'][:10] }}</td>
+                <td>
+                  {% if w['status'] == 'pending' %}
+                  <button class="btn btn-success btn-xs approve-btn" data-id="{{ w['id'] }}">Approve & Pay</button>
+                  <button class="btn btn-danger btn-xs mark-failed-btn" data-id="{{ w['id'] }}">Reject</button>
+                  {% endif %}
+                </td>
               </tr>
               {% endfor %}
             </tbody>
@@ -110,6 +116,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="/static/js/admin_withdrawals.js"></script>
 <script>
   const searchEl  = document.getElementById('wd-search');
   const netSel    = document.getElementById('wd-net-filter');
