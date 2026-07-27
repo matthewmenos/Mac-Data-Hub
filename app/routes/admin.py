@@ -373,7 +373,7 @@ def withdrawals():
                     return jsonify({"ok": False, "error": "Reseller has no payout profile."}), 400
                 
                 # Calculate net amount (already stored in DB with fee deducted)
-                fee_pesewas = wd.get("fee_pesewas", 0)
+                fee_pesewas = wd["fee_pesewas"] if "fee_pesewas" in wd.keys() else 0
                 payout_pesewas = wd["amount_pesewas"] - fee_pesewas
                 
                 if payout_pesewas <= 0:
