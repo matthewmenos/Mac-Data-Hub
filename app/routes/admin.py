@@ -6,10 +6,13 @@ from ..services.db import global_db, global_db_read
 from ..services.push import broadcast_push
 from ..services.storage import upload_asset, delete_asset
 from ..services.gigzhub import get_offers, get_balance as gigzhub_get_balance
+from ..services.paystack import create_transfer_recipient
 ALLOWED_LOGO_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MAX_LOGO_BYTES = 2 * 1024 * 1024
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+MOMO_BANK_CODES = {"mtn": "MTN", "telecel": "VOD", "airteltigo": "ATL"}
 
 
 def admin_required(f):
@@ -340,6 +343,55 @@ def redispatch_order(order_id):
     return jsonify({"ok": True, "gigzhub_id": gigzhub_id})
 
 
+def _get_user_value(user, key, default=""):
+    if hasattr(user, "get"):
+        return user.get(key, default)
+    if hasattr(user, "keys"):
+        try:
+            return user[key]
+        except (KeyError, IndexError, TypeError):
+            return default
+    return default
+
+
+def _get_or_create_transfer_recipient(config, user, db=None):
+    recipient_code = str(_get_user_value(user, "payout_recipient_code", "") or "").strip()
+    if recipient_code:
+        return recipient_code
+
+    network = str(_get_user_value(user, "momo_network", "") or "").strip().lower()
+    phone = str(_get_user_value(user, "momo_number", "") or "").strip()
+    bank_code = MOMO_BANK_CODES.get(network)
+    if not phone or not bank_code:
+        raise ValueError("Reseller payout profile is incomplete.")
+
+    name = str(_get_user_value(user, "full_name", "Reseller") or "Reseller").strip() or "Reseller"
+    result = create_transfer_recipient(
+        config["PAYSTACK_SECRET_KEY"],
+        name,
+        phone,
+        bank_code,
+    )
+    recipient_code = result.get("data", {}).get("recipient_code", "") or ""
+    if not recipient_code:
+        raise ValueError("Paystack did not return a recipient code.")
+
+    user_id = _get_user_value(user, "id", "")
+    if db is None:
+        with global_db(config) as write_db:
+            write_db.execute(
+                "UPDATE users SET payout_recipient_code=?, momo_network=?, momo_number=? WHERE id=?",
+                (recipient_code, network, phone, user_id),
+            )
+    else:
+        db.execute(
+            "UPDATE users SET payout_recipient_code=?, momo_network=?, momo_number=? WHERE id=?",
+            (recipient_code, network, phone, user_id),
+        )
+
+    return recipient_code
+
+
 @admin_bp.route("/withdrawals", methods=["GET", "POST"])
 @admin_required
 def withdrawals():
@@ -369,8 +421,13 @@ def withdrawals():
                 # Mark as processing and initiate Paystack transfer
                 user = db.execute("SELECT * FROM users WHERE id=?", (wd["user_id"],)).fetchone()
                 
-                if not user or not user["payout_recipient_code"]:
-                    return jsonify({"ok": False, "error": "Reseller has no payout profile."}), 400
+                if not user:
+                    return jsonify({"ok": False, "error": "Reseller user not found."}), 400
+
+                try:
+                    recipient_code = _get_or_create_transfer_recipient(config, dict(user), db=db)
+                except Exception as exc:
+                    return jsonify({"ok": False, "error": str(exc)}), 400
                 
                 # Calculate net amount (already stored in DB with fee deducted)
                 fee_pesewas = wd["fee_pesewas"] if "fee_pesewas" in wd.keys() else 0
@@ -395,7 +452,7 @@ def withdrawals():
                     result = initiate_transfer(
                         config["PAYSTACK_SECRET_KEY"],
                         payout_pesewas,
-                        user["payout_recipient_code"],
+                        recipient_code,
                         unique_ref,
                         reason="Mac Data Hub wallet withdrawal"
                     )
