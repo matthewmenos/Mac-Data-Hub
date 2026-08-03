@@ -481,13 +481,20 @@ def withdrawals():
                         (wd["amount_pesewas"], wd["user_id"])
                     )
                     
-                    # Provide a user-friendly error message
-                    if "insufficient" in err_msg.lower():
-                        friendly_msg = "Paystack wallet balance is insufficient. Please fund your Paystack wallet and try again."
-                    elif "duplicate" in err_msg.lower() or "reference" in err_msg.lower():
-                        friendly_msg = "Duplicate transfer reference. Please try again."
+                    # Provide a diagnostic user-friendly error message
+                    err_lower = err_msg.lower()
+                    if "cannot initiate third party payouts" in err_lower or "third party" in err_lower:
+                        friendly_msg = "Paystack transfer payouts are restricted on this account. Check Paystack Dashboard → Settings → Transfers to enable payouts. You may need KYC verification."
+                    elif "insufficient" in err_lower or "balance" in err_lower:
+                        friendly_msg = "Paystack wallet balance is insufficient. Please fund your Paystack wallet (https://dashboard.paystack.com) and try again."
+                    elif "not verified" in err_lower or "verification" in err_lower or "kyc" in err_lower:
+                        friendly_msg = "Paystack account needs verification (KYC). Complete your account setup in Paystack Dashboard → Settings, then try again."
+                    elif "duplicate" in err_lower or "reference" in err_lower:
+                        friendly_msg = "Duplicate transfer reference. Please try again in a moment."
+                    elif "recipient" in err_lower or "account" in err_lower:
+                        friendly_msg = "Issue with payout recipient account. Verify the reseller's mobile money details are correct and try again."
                     else:
-                        friendly_msg = err_msg
+                        friendly_msg = f"Paystack transfer failed: {err_msg}. Check your Paystack account settings and try again."
                     
                     return jsonify({"ok": False, "error": friendly_msg}), 502
             
